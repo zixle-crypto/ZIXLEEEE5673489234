@@ -90,7 +90,8 @@ export const GameCanvas = () => {
       checkTileCollisions();
 
       // Simple death condition (fall off screen)
-      if (player.y > CANVAS_HEIGHT + 100) {
+      if (player.y > CANVAS_HEIGHT + 50) {
+        console.log('Player fell off screen!');
         playerDie();
       }
     }
@@ -111,6 +112,10 @@ export const GameCanvas = () => {
   }, [player, currentRoom.tiles]);
 
   const isPlayerCollidingWithTile = (player: any, tile: any): boolean => {
+    // Only check collision for solid tiles in their current state
+    const currentState = tile.isAttended ? tile.safeState : tile.dangerState;
+    if (currentState === 'empty') return false; // No collision for gaps/doors
+    
     return (
       player.x < tile.x + tile.width &&
       player.x + player.width > tile.x &&
@@ -125,16 +130,18 @@ export const GameCanvas = () => {
     switch (currentState) {
       case 'spike_stair':
         if (!tile.isAttended) {
+          console.log('Player hit spikes!');
           playerDie(); // Hit spikes
         }
         break;
       case 'platform_saw':
         if (!tile.isAttended) {
+          console.log('Player hit saw!');
           playerDie(); // Hit spinning saw
         }
         break;
       case 'solid':
-        // Platform collision - stop player movement
+        // Platform collision - could add platform physics here
         break;
       case 'empty':
         // No collision for gaps/doors

@@ -126,8 +126,8 @@ export const useGameStore = create<GameStore>()(
         player.y += player.velY;
         
         // Simple ground collision (floor at y=500)
-        if (player.y > 500) {
-          player.y = 500;
+        if (player.y + player.height >= 500) {
+          player.y = 500 - player.height;
           player.velY = 0;
           player.onGround = true;
         } else {
