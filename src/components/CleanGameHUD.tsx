@@ -122,22 +122,14 @@ export const GameHUD = () => {
             <div className="flex gap-3 justify-center">
               <Button
                 variant="outline"
-                onClick={() => {
-                  console.log('Try Again clicked, isGameOver before:', isGameOver);
-                  restartGame();
-                  console.log('Try Again clicked, isGameOver after:', isGameOver);
-                }}
+                onClick={restartGame}
                 className="bg-hud-bg border-hud-border text-game-text hover:bg-perception/20 pointer-events-auto"
               >
                 Try Again
               </Button>
               <Button
                 variant="default"
-                onClick={() => {
-                  console.log('New Run clicked, isGameOver before:', isGameOver);
-                  restartGame();
-                  console.log('New Run clicked, isGameOver after:', isGameOver);
-                }}
+                onClick={restartGame}
                 className="bg-perception text-game-bg hover:bg-perception-glow pointer-events-auto"
               >
                 New Run
