@@ -186,14 +186,19 @@ export const CompleteGameCanvas = () => {
           Math.pow(player.x - room.exit.x, 2) + Math.pow(player.y - room.exit.y, 2)
         );
         if (exitDistance < 40) {
-          // Progress to next room
-          roomNumberRef.current++;
-          currentRoomRef.current = createRoom(roomNumberRef.current);
-          player.x = currentRoomRef.current.spawn.x;
-          player.y = currentRoomRef.current.spawn.y;
-          player.velX = 0;
-          player.velY = 0;
-          console.log(`🚪 Progressed to room ${roomNumberRef.current}`);
+          // Progress to next room (max 100 rooms)
+          if (roomNumberRef.current < 100) {
+            roomNumberRef.current++;
+            currentRoomRef.current = createRoom(roomNumberRef.current);
+            player.x = currentRoomRef.current.spawn.x;
+            player.y = currentRoomRef.current.spawn.y;
+            player.velX = 0;
+            player.velY = 0;
+            console.log(`🚪 Progressed to room ${roomNumberRef.current}/100`);
+          } else {
+            console.log(`🎉 GAME COMPLETED! All 100 rooms finished!`);
+            // Could trigger victory screen here
+          }
         }
       }
 
@@ -333,8 +338,13 @@ export const CompleteGameCanvas = () => {
       // Draw UI
       ctx.fillStyle = '#ffffff';
       ctx.font = '16px monospace';
-      ctx.fillText(`Room ${roomNumberRef.current} | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
-      ctx.fillText(`Move cursor near tiles to change them!`, 10, 50);
+      ctx.fillText(`Room ${roomNumberRef.current}/100 | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
+      if (roomNumberRef.current <= 100) {
+        const difficulty = Math.floor((roomNumberRef.current - 1) / 10) + 1;
+        ctx.fillText(`Difficulty Level: ${difficulty}/10 | Move cursor near tiles to change them!`, 10, 50);
+      } else {
+        ctx.fillText(`🎉 CONGRATULATIONS! You completed all 100 rooms! 🎉`, 10, 50);
+      }
     };
 
     // Game loop
@@ -361,7 +371,9 @@ export const CompleteGameCanvas = () => {
     <div className="w-full h-full flex items-center justify-center">
       <canvas
         ref={canvasRef}
-        className="border border-game-border bg-game-bg rounded-lg cursor-none"
+        className={`border border-game-border bg-game-bg rounded-lg ${
+          isPlaying && !isPaused && !isGameOver ? 'cursor-none' : 'cursor-default'
+        }`}
         style={{
           width: '800px',
           height: '600px',
