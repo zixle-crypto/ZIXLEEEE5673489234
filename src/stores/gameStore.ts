@@ -222,7 +222,16 @@ export const useGameStore = create<GameStore>()(
       },
 
       restartGame: () => {
-        get().initGame();
+        console.log('🔄 Restart game called');
+        set({
+          isGameOver: false,
+          isPlaying: false,
+          isPaused: false
+        });
+        // Use setTimeout to ensure state update happens before init
+        setTimeout(() => {
+          get().initGame();
+        }, 0);
       },
 
       nextRoom: () => {
