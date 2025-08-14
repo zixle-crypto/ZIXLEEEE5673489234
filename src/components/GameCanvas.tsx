@@ -153,7 +153,12 @@ export const GameCanvas = () => {
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
+    if (!ctx || !canvas) {
+      console.log('Canvas or context not available');
+      return;
+    }
+
+    console.log('Rendering frame - canvas size:', canvas.width, 'x', canvas.height);
 
     // Clear canvas with animated background
     const time = Date.now() * 0.001;
@@ -369,11 +374,16 @@ export const GameCanvas = () => {
   // Setup event listeners and game loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log('Canvas not found in useEffect');
+      return;
+    }
 
+    console.log('Setting up canvas:', canvas);
     // Set canvas size
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
+    console.log('Canvas size set to:', CANVAS_WIDTH, 'x', CANVAS_HEIGHT);
 
     // Add event listeners
     window.addEventListener('keydown', handleKeyDown);
@@ -381,6 +391,7 @@ export const GameCanvas = () => {
     canvas.addEventListener('mousemove', handleMouseMove);
 
     // Start game loop
+    console.log('Starting game loop...');
     animationRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
@@ -394,13 +405,17 @@ export const GameCanvas = () => {
   }, [handleKeyDown, handleKeyUp, handleMouseMove, gameLoop]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="border border-game-border bg-game-bg rounded-lg cursor-none"
-      style={{
-        imageRendering: 'pixelated',
-        filter: 'drop-shadow(0 0 20px hsl(var(--perception-teal) / 0.2))'
-      }}
-    />
+    <div className="w-full h-full flex items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        className="border border-game-border bg-game-bg rounded-lg cursor-none"
+        style={{
+          width: '800px',
+          height: '600px',
+          imageRendering: 'pixelated',
+          filter: 'drop-shadow(0 0 20px hsl(var(--perception-teal) / 0.2))'
+        }}
+      />
+    </div>
   );
 };

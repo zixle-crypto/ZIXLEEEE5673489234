@@ -11,11 +11,12 @@ export const PerceptionShift = () => {
   const { initGame, isPlaying } = useGameStore();
 
   useEffect(() => {
-    // Initialize game on mount
-    if (!isPlaying) {
-      initGame();
-    }
-  }, [initGame, isPlaying]);
+    // Force initialize game on mount
+    console.log('PerceptionShift mounting, initializing game...');
+    initGame();
+  }, [initGame]);
+
+  console.log('PerceptionShift render - isPlaying:', isPlaying);
 
   return (
     <div className="min-h-screen bg-game-bg flex items-center justify-center p-4 font-mono">

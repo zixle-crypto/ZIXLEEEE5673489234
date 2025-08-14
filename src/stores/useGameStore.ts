@@ -91,10 +91,15 @@ export const useGameStore = create<GameStore>()(
 
       // Actions
       initGame: () => {
+        console.log('Initializing game...');
         const now = Date.now();
+        const weeklySeed = getWeeklySeed();
+        const initialRoom = generateRoom(1, weeklySeed);
+        console.log('Generated room with', initialRoom.tiles.length, 'tiles and', initialRoom.shards.length, 'shards');
+        
         set({
           player: createInitialPlayer(),
-          currentRoom: createInitialRoom(),
+          currentRoom: initialRoom,
           camera: { x: 0, y: 0 },
           cursor: { x: 0, y: 0 },
           roomsCleared: 0,
@@ -106,8 +111,9 @@ export const useGameStore = create<GameStore>()(
           isPlaying: true,
           isPaused: false,
           isGameOver: false,
-          weeklySeed: getWeeklySeed(),
+          weeklySeed,
         });
+        console.log('Game initialized - isPlaying: true');
       },
 
       updatePlayer: (deltaTime: number) => {
