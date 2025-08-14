@@ -88,9 +88,16 @@ export const GameHUD = () => {
             <p className="text-game-text-dim mb-4">
               Use WASD or arrow keys to move and jump
             </p>
-            <p className="text-game-text-dim text-sm">
+            <p className="text-game-text-dim text-sm mb-4">
               Aim your cursor to shift tile states
             </p>
+            <Button
+              variant="default"
+              onClick={resumeGame}
+              className="bg-perception text-game-bg hover:bg-perception-glow"
+            >
+              Resume Game
+            </Button>
           </div>
         </div>
       )}
@@ -115,15 +122,21 @@ export const GameHUD = () => {
             <div className="flex gap-3 justify-center">
               <Button
                 variant="outline"
-                onClick={restartGame}
-                className="bg-hud-bg border-hud-border text-game-text hover:bg-perception/20"
+                onClick={() => {
+                  console.log('Try Again clicked');
+                  restartGame();
+                }}
+                className="bg-hud-bg border-hud-border text-game-text hover:bg-perception/20 pointer-events-auto"
               >
                 Try Again
               </Button>
               <Button
                 variant="default"
-                onClick={restartGame}
-                className="bg-perception text-game-bg hover:bg-perception-glow"
+                onClick={() => {
+                  console.log('New Run clicked');
+                  restartGame();
+                }}
+                className="bg-perception text-game-bg hover:bg-perception-glow pointer-events-auto"
               >
                 New Run
               </Button>
