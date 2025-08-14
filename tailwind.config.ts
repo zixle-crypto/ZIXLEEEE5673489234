@@ -52,15 +52,27 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				
+				/* Game-specific colors */
+				game: {
+					bg: 'hsl(var(--game-bg))',
+					surface: 'hsl(var(--game-surface))',
+					border: 'hsl(var(--game-border))',
+					text: 'hsl(var(--game-text))',
+					'text-dim': 'hsl(var(--game-text-dim))',
+					danger: 'hsl(var(--game-danger))',
+					safe: 'hsl(var(--game-safe))',
+					neutral: 'hsl(var(--game-neutral))',
+					collect: 'hsl(var(--game-collect))'
+				},
+				perception: {
+					DEFAULT: 'hsl(var(--perception-teal))',
+					glow: 'hsl(var(--perception-teal-glow))',
+					dark: 'hsl(var(--perception-teal-dark))'
+				},
+				hud: {
+					bg: 'hsl(var(--hud-bg))',
+					border: 'hsl(var(--hud-border))'
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,47 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				/* Game-specific animations */
+				'perception-pulse': {
+					'0%, 100%': { 
+						boxShadow: '0 0 0 0 hsl(var(--perception-teal) / 0.7)' 
+					},
+					'70%': { 
+						boxShadow: '0 0 0 10px hsl(var(--perception-teal) / 0)' 
+					}
+				},
+				'tile-flip': {
+					'0%': { transform: 'rotateY(0deg)' },
+					'50%': { transform: 'rotateY(90deg)' },
+					'100%': { transform: 'rotateY(0deg)' }
+				},
+				'shard-collect': {
+					'0%': { 
+						transform: 'scale(1) rotate(0deg)',
+						opacity: '1'
+					},
+					'100%': { 
+						transform: 'scale(1.5) rotate(180deg)',
+						opacity: '0'
+					}
+				},
+				'attention-glow': {
+					'0%, 100%': { 
+						filter: 'drop-shadow(0 0 5px hsl(var(--perception-teal) / 0.5))' 
+					},
+					'50%': { 
+						filter: 'drop-shadow(0 0 20px hsl(var(--perception-teal) / 0.8))' 
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'perception-pulse': 'perception-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'tile-flip': 'tile-flip 0.3s ease-in-out',
+				'shard-collect': 'shard-collect 0.4s ease-out forwards',
+				'attention-glow': 'attention-glow 1.5s ease-in-out infinite'
 			}
 		}
 	},
