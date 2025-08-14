@@ -14,7 +14,8 @@ type Screen = 'splash' | 'welcome' | 'new-player' | 'returning-player';
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -27,52 +28,29 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     }
   }, [currentScreen]);
 
-  const checkUserExists = async (username: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', username.toLowerCase())
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error checking user:', error);
-      throw error;
-    }
-    
-    return !!data;
-  };
-
-  const createUser = async (username: string) => {
-    // Create profile directly without authentication
-    const { error } = await supabase
-      .from('profiles')
-      .insert({
-        user_id: crypto.randomUUID(), // Generate a random UUID for user_id
-        username: username.toLowerCase(),
-        score: 0,
-        progress: 0
-      });
-
-    if (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
-  };
-
   const handleNewPlayer = async () => {
-    if (!username.trim()) {
+    if (!email.trim()) {
       toast({
-        title: "Username required",
-        description: "Please enter a username to continue",
+        title: "Email required",
+        description: "Please enter an email address to continue",
         variant: "destructive"
       });
       return;
     }
 
-    if (username.length < 3) {
+    if (!password.trim()) {
       toast({
-        title: "Username too short",
-        description: "Username must be at least 3 characters long",
+        title: "Password required",
+        description: "Please enter a password to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
         variant: "destructive"
       });
       return;
@@ -81,27 +59,29 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     setIsLoading(true);
     
     try {
-      const userExists = await checkUserExists(username);
-      if (userExists) {
-        toast({
-          title: "Username taken",
-          description: "This username has already been taken. Please try another one.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        }
+      });
+
+      if (error) {
+        throw error;
       }
 
-      await createUser(username);
-      toast({
-        title: "Welcome to Zixle Studios!",
-        description: `Account created successfully for ${username}`,
-      });
-      onComplete(username);
-    } catch (error) {
+      if (data.user) {
+        toast({
+          title: "Welcome to Zixle Studios!",
+          description: `Account created successfully for ${email}`,
+        });
+        onComplete(email);
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -109,10 +89,19 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   };
 
   const handleReturningPlayer = async () => {
-    if (!username.trim()) {
+    if (!email.trim()) {
       toast({
-        title: "Username required",
-        description: "Please enter your username to continue",
+        title: "Email required",
+        description: "Please enter your email address to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!password.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to continue",
         variant: "destructive"
       });
       return;
@@ -121,35 +110,26 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     setIsLoading(true);
     
     try {
-      const userExists = await checkUserExists(username);
-      if (!userExists) {
-        toast({
-          title: "User does not exist",
-          description: "This username was not found. Please try again or create a new account.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
+      });
+
+      if (error) {
+        throw error;
       }
 
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username.toLowerCase())
-        .single();
-
-      if (profile) {
+      if (data.user) {
         toast({
           title: "Welcome back!",
-          description: `Successfully logged in as ${username}`,
+          description: `Successfully logged in as ${email}`,
         });
-        onComplete(username);
+        onComplete(email);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to login. Please try again.",
+        description: error.message || "Failed to login. Please try again.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -212,22 +192,39 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
               CREATE ACCOUNT
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Choose a unique username
+              Enter your email and create a password
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-game-text font-mono">
-                Username
-              </Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="bg-game-bg border-game-border text-game-text font-mono"
-                disabled={isLoading}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-game-text font-mono">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="bg-game-bg border-game-border text-game-text font-mono"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-game-text font-mono">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="bg-game-bg border-game-border text-game-text font-mono"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -261,22 +258,39 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
               WELCOME BACK
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Enter your username
+              Enter your email and password
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-game-text font-mono">
-                Username
-              </Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="bg-game-bg border-game-border text-game-text font-mono"
-                disabled={isLoading}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-game-text font-mono">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="bg-game-bg border-game-border text-game-text font-mono"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-game-text font-mono">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="bg-game-bg border-game-border text-game-text font-mono"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
