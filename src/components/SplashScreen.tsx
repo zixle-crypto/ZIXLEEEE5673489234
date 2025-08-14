@@ -72,11 +72,19 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       }
 
       if (data.user) {
-        toast({
-          title: "Welcome to Zixle Studios!",
-          description: `Account created successfully for ${email}`,
-        });
-        onComplete(email);
+        if (data.user.email_confirmed_at) {
+          toast({
+            title: "Welcome to Zixle Studios!",
+            description: `Account created successfully for ${email}`,
+          });
+          onComplete(email);
+        } else {
+          toast({
+            title: "Check your email!",
+            description: `We've sent a confirmation link to ${email}. Please check your email and click the link to activate your account.`,
+          });
+          setIsLoading(false);
+        }
       }
     } catch (error: any) {
       toast({
@@ -116,7 +124,23 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       });
 
       if (error) {
-        throw error;
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Invalid credentials",
+            description: "Please check your email and password. If you just signed up, make sure you've confirmed your email address.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your email and click the confirmation link before logging in.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        setIsLoading(false);
+        return;
       }
 
       if (data.user) {
