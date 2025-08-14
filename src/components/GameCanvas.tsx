@@ -158,7 +158,31 @@ export const GameCanvas = () => {
       return;
     }
 
-    console.log('Rendering frame - canvas size:', canvas.width, 'x', canvas.height);
+    // Clear and fill background - make it very obvious
+    ctx.fillStyle = '#1a1f2e'; // Solid dark blue
+    ctx.fillRect(0, 0, 800, 600);
+    
+    // Draw a test rectangle to ensure rendering works
+    ctx.fillStyle = '#20d4d4'; // Bright teal
+    ctx.fillRect(50, 50, 100, 100);
+    
+    // Draw player as bright square
+    ctx.fillStyle = '#20d4d4';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Draw simple ground
+    ctx.fillStyle = '#2a2f3e';
+    ctx.fillRect(0, 500, 800, 100);
+    
+    // Draw shards as bright circles
+    currentRoom.shards.forEach((shard) => {
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(shard.x, shard.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    console.log('Frame rendered - player at:', player.x, player.y);
 
     // Clear canvas with animated background
     const time = Date.now() * 0.001;
@@ -405,17 +429,17 @@ export const GameCanvas = () => {
   }, [handleKeyDown, handleKeyUp, handleMouseMove, gameLoop]);
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <canvas
-        ref={canvasRef}
-        className="border border-game-border bg-game-bg rounded-lg cursor-none"
-        style={{
-          width: '800px',
-          height: '600px',
-          imageRendering: 'pixelated',
-          filter: 'drop-shadow(0 0 20px hsl(var(--perception-teal) / 0.2))'
-        }}
-      />
-    </div>
+    <canvas
+      ref={canvasRef}
+      width={800}
+      height={600}
+      className="border border-game-border bg-game-bg rounded-lg cursor-none block"
+      style={{
+        width: '800px',
+        height: '600px',
+        display: 'block',
+        backgroundColor: 'hsl(221, 39%, 11%)'
+      }}
+    />
   );
 };
