@@ -61,12 +61,7 @@ export const GameCanvas = () => {
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) {
-      console.log('Canvas or context not available for rendering');
-      return;
-    }
-
-    console.log('RENDERING - Player position:', player?.x || 0, player?.y || 0);
+    if (!ctx || !canvas) return;
 
     // Clear and fill background
     ctx.fillStyle = '#1a1f2e'; // Dark blue
@@ -101,18 +96,14 @@ export const GameCanvas = () => {
     ctx.font = '20px Arial';
     ctx.fillText('GAME WORKING!', 300, 100);
     if (player) {
-      ctx.fillText(`Player: ${player.x}, ${player.y}`, 300, 130);
+      ctx.fillText(`Player: ${Math.floor(player.x)}, ${Math.floor(player.y)}`, 300, 130);
     }
-
-    console.log('Render complete');
   }, [player, currentRoom]);
 
   // Game loop
   const gameLoop = useCallback((currentTime: number) => {
     const deltaTime = currentTime - lastTimeRef.current;
     lastTimeRef.current = currentTime;
-
-    console.log('Game loop running - isPlaying:', isPlaying);
 
     if (isPlaying && !isPaused && !isGameOver) {
       // Update game state
@@ -136,7 +127,6 @@ export const GameCanvas = () => {
 
       // Simple death condition
       if (player && player.y > CANVAS_HEIGHT + 50) {
-        console.log('Player fell off screen!');
         playerDie();
       }
     }
@@ -166,13 +156,12 @@ export const GameCanvas = () => {
     canvas.addEventListener('mousemove', handleMouseMove);
 
     // Start game loop
-    console.log('Starting game loop...');
     lastTimeRef.current = performance.now();
     animationRef.current = requestAnimationFrame(gameLoop);
     
-    // Force initial render
+    // Force initial render (only log this once)
     setTimeout(() => {
-      console.log('Force initial render');
+      console.log('Game initialized and rendering started');
       render();
     }, 100);
 
