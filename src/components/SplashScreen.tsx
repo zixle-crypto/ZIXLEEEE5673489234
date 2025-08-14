@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SplashScreenProps {
   onComplete: (username: string) => void;
@@ -27,21 +28,55 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   }, [currentScreen]);
 
   const checkUserExists = async (username: string): Promise<boolean> => {
-    // This will be implemented with Supabase
-    // For now, simulate with localStorage
-    const existingUsers = JSON.parse(localStorage.getItem('zixle-users') || '{}');
-    return username.toLowerCase() in existingUsers;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username.toLowerCase())
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    return !!data;
   };
 
   const createUser = async (username: string) => {
-    const existingUsers = JSON.parse(localStorage.getItem('zixle-users') || '{}');
-    existingUsers[username.toLowerCase()] = {
-      username,
-      score: 0,
-      progress: 0,
-      createdAt: Date.now()
-    };
-    localStorage.setItem('zixle-users', JSON.stringify(existingUsers));
+    // Create a temporary password for the user
+    const tempEmail = `${username.toLowerCase()}@zixle.temp`;
+    const tempPassword = 'temp123456';
+    
+    // Sign up the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: tempEmail,
+      password: tempPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          username: username
+        }
+      }
+    });
+
+    if (authError) {
+      throw authError;
+    }
+
+    if (authData.user) {
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: authData.user.id,
+          username: username.toLowerCase(),
+          score: 0,
+          progress: 0
+        });
+
+      if (profileError) {
+        throw profileError;
+      }
+    }
   };
 
   const handleNewPlayer = async () => {
@@ -117,11 +152,32 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         return;
       }
 
-      toast({
-        title: "Welcome back!",
-        description: `Successfully logged in as ${username}`,
-      });
-      onComplete(username);
+      // Get user profile and sign them in using their temp credentials
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .single();
+
+      if (profile) {
+        const tempEmail = `${username.toLowerCase()}@zixle.temp`;
+        const tempPassword = 'temp123456';
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: tempEmail,
+          password: tempPassword
+        });
+
+        if (signInError) {
+          throw signInError;
+        }
+
+        toast({
+          title: "Welcome back!",
+          description: `Successfully logged in as ${username}`,
+        });
+        onComplete(username);
+      }
     } catch (error) {
       toast({
         title: "Error",
