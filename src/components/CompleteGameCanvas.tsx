@@ -26,7 +26,8 @@ export const CompleteGameCanvas = () => {
     isGameOver,
     collectShard,
     playerDie,
-    updateCursor
+    updateCursor,
+    nextRoom
   } = useGameStore();
 
   // Calculate if tile should be attended based on cursor proximity
@@ -202,19 +203,10 @@ export const CompleteGameCanvas = () => {
           Math.pow(player.x - room.exit.x, 2) + Math.pow(player.y - room.exit.y, 2)
         );
         if (exitDistance < 40) {
-          // Progress to next room (max 100 rooms)
-          if (roomNumberRef.current < 100) {
-            roomNumberRef.current++;
-            currentRoomRef.current = createRoom(roomNumberRef.current);
-            player.x = currentRoomRef.current.spawn.x;
-            player.y = currentRoomRef.current.spawn.y;
-            player.velX = 0;
-            player.velY = 0;
-            console.log(`🚪 Progressed to room ${roomNumberRef.current}/100`);
-          } else {
-            console.log(`🎉 GAME COMPLETED! All 100 rooms finished!`);
-            // Could trigger victory screen here
-          }
+          // Progress to next room using store function
+          console.log(`🚪 Progressing to next room via store`);
+          nextRoom();
+          return; // Exit early to let store handle the transition
         }
       }
 
@@ -383,20 +375,16 @@ export const CompleteGameCanvas = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove]); // Remove store dependencies to prevent re-initialization
+  }, [handleKeyDown, handleKeyUp, handleMouseMove]); 
 
-  // Separate useEffect to handle respawn/restart events
+  // Separate useEffect to handle respawn/restart events and room transitions
   useEffect(() => {
-    if (isGameOver || !isPlaying) return;
-    
-    // Only sync when player position is at spawn (indicates restart/respawn)
-    if (player.x === currentRoom.spawn.x && player.y === currentRoom.spawn.y) {
-      console.log('🔄 Syncing after restart/respawn');
-      playerRef.current = { ...player };
-      currentRoomRef.current = { ...currentRoom };
-      roomNumberRef.current = roomsCleared + 1;
-    }
-  }, [player.x, player.y, currentRoom, roomsCleared, isPlaying, isGameOver]);
+    // Sync refs when store state changes (restart/respawn/room change)
+    playerRef.current = { ...player };
+    currentRoomRef.current = { ...currentRoom };
+    roomNumberRef.current = roomsCleared + 1;
+    console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
+  }, [player.x, player.y, currentRoom.id, roomsCleared]);
 
   return (
     <div className="w-full h-full flex items-center justify-center">
