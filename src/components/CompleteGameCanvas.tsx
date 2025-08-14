@@ -17,6 +17,9 @@ export const CompleteGameCanvas = () => {
   const roomNumberRef = useRef(1);
 
   const {
+    player,
+    currentRoom,
+    roomsCleared,
     score,
     isPlaying,
     isPaused,
@@ -69,6 +72,11 @@ export const CompleteGameCanvas = () => {
 
     canvas.width = 800;
     canvas.height = 600;
+
+    // Sync refs with store state
+    playerRef.current = { ...player };
+    currentRoomRef.current = { ...currentRoom };
+    roomNumberRef.current = roomsCleared + 1;
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -351,6 +359,14 @@ export const CompleteGameCanvas = () => {
 
     // Game loop
     const gameLoop = () => {
+      // Sync refs with store state when game restarts/respawns
+      if (Math.abs(playerRef.current.x - player.x) > 50 || Math.abs(playerRef.current.y - player.y) > 50) {
+        console.log('🔄 Syncing player position from store');
+        playerRef.current = { ...player };
+        currentRoomRef.current = { ...currentRoom };
+        roomNumberRef.current = roomsCleared + 1;
+      }
+
       updateGame();
       render();
       animationRef.current = requestAnimationFrame(gameLoop);
@@ -367,7 +383,7 @@ export const CompleteGameCanvas = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove, isPlaying, isPaused, isGameOver, score, collectShard, playerDie, updateCursor]);
+  }, [handleKeyDown, handleKeyUp, handleMouseMove, isPlaying, isPaused, isGameOver, score, collectShard, playerDie, updateCursor, player, currentRoom, roomsCleared]);
 
   return (
     <div className="w-full h-full flex items-center justify-center">
