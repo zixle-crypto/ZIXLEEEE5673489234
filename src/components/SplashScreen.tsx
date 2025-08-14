@@ -32,9 +32,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       .from('profiles')
       .select('username')
       .eq('username', username.toLowerCase())
-      .single();
+      .maybeSingle();
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
+      console.error('Error checking user:', error);
       throw error;
     }
     
@@ -42,40 +43,19 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   };
 
   const createUser = async (username: string) => {
-    // Create a temporary password for the user
-    const tempEmail = `${username.toLowerCase()}@zixle.temp`;
-    const tempPassword = 'temp123456';
-    
-    // Sign up the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: tempEmail,
-      password: tempPassword,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          username: username
-        }
-      }
-    });
+    // Create profile directly without authentication
+    const { error } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: crypto.randomUUID(), // Generate a random UUID for user_id
+        username: username.toLowerCase(),
+        score: 0,
+        progress: 0
+      });
 
-    if (authError) {
-      throw authError;
-    }
-
-    if (authData.user) {
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: authData.user.id,
-          username: username.toLowerCase(),
-          score: 0,
-          progress: 0
-        });
-
-      if (profileError) {
-        throw profileError;
-      }
+    if (error) {
+      console.error('Error creating user:', error);
+      throw error;
     }
   };
 
@@ -152,7 +132,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         return;
       }
 
-      // Get user profile and sign them in using their temp credentials
+      // Get user profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -160,18 +140,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         .single();
 
       if (profile) {
-        const tempEmail = `${username.toLowerCase()}@zixle.temp`;
-        const tempPassword = 'temp123456';
-        
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: tempEmail,
-          password: tempPassword
-        });
-
-        if (signInError) {
-          throw signInError;
-        }
-
         toast({
           title: "Welcome back!",
           description: `Successfully logged in as ${username}`,
