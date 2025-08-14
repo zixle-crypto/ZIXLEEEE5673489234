@@ -109,10 +109,17 @@ export const useGameStore = create<GameStore>()(
 
       // Actions
       initGame: () => {
+        console.log('🎮 Initializing game state...');
+        const newPlayer = createInitialPlayer();
+        const newRoom = createInitialRoom();
+        
+        console.log('🎯 Player created at:', newPlayer.x, newPlayer.y);
+        console.log('🔸 Room created with', newRoom.shards.length, 'shards');
+        
         set({
-          player: createInitialPlayer(),
-          currentRoom: createInitialRoom(),
-          cursor: { x: 0, y: 0 },
+          player: newPlayer,
+          currentRoom: newRoom,
+          cursor: { x: 400, y: 300 }, // Center of canvas
           roomsCleared: 0,
           score: 0,
           startTime: Date.now(),
@@ -121,6 +128,8 @@ export const useGameStore = create<GameStore>()(
           isGameOver: false,
           weeklySeed: 20241,
         });
+        
+        console.log('✅ Game initialized - isPlaying: true');
       },
 
       updatePlayer: (deltaTime: number) => {

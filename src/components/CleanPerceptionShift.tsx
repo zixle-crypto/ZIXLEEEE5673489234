@@ -11,8 +11,15 @@ export const CleanPerceptionShift = () => {
   const { initGame, isPlaying } = useGameStore();
 
   useEffect(() => {
-    // Initialize game once
+    // Initialize game once and ensure it's playing
+    console.log('Initializing game...');
     initGame();
+    
+    // Force a second initialization after a brief delay to ensure state is set
+    setTimeout(() => {
+      console.log('Ensuring game is initialized and playing...');
+      initGame();
+    }, 100);
   }, [initGame]);
 
   return (

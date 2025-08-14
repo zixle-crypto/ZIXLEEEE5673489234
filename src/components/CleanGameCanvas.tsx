@@ -54,62 +54,83 @@ export const GameCanvas = () => {
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
+    if (!ctx || !canvas) {
+      console.log('❌ Canvas or context not available');
+      return;
+    }
 
     // Clear canvas with dark background
     ctx.fillStyle = '#1a1f2e';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Draw ground platform
+    // Always draw ground platform (visible reference)
     ctx.fillStyle = '#2a2f3e';
     ctx.fillRect(0, 500, CANVAS_WIDTH, 100);
     
-    // Draw player
-    if (player) {
-      ctx.fillStyle = player.alive ? '#20d4d4' : '#ef4444';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-      
-      // Player glow
-      if (player.alive) {
-        ctx.shadowColor = '#20d4d4';
-        ctx.shadowBlur = 10;
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        ctx.shadowBlur = 0;
-      }
+    // Always draw a test rectangle (to verify rendering works)
+    ctx.fillStyle = '#20d4d4';
+    ctx.fillRect(50, 50, 100, 50);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '16px monospace';
+    ctx.fillText('RENDERING WORKS', 160, 75);
+    
+    // Draw player (with fallback position if undefined)
+    const playerX = player?.x ?? 100;
+    const playerY = player?.y ?? 400;
+    const playerW = player?.width ?? 24;
+    const playerH = player?.height ?? 24;
+    const playerAlive = player?.alive ?? true;
+    
+    ctx.fillStyle = playerAlive ? '#20d4d4' : '#ef4444';
+    ctx.fillRect(playerX, playerY, playerW, playerH);
+    
+    // Player glow
+    if (playerAlive) {
+      ctx.shadowColor = '#20d4d4';
+      ctx.shadowBlur = 10;
+      ctx.fillRect(playerX, playerY, playerW, playerH);
+      ctx.shadowBlur = 0;
     }
     
-    // Draw shards
-    if (currentRoom?.shards) {
-      currentRoom.shards.forEach((shard) => {
-        const time = Date.now() * 0.005;
-        const pulse = Math.sin(time) * 0.2 + 0.8;
-        
-        ctx.fillStyle = `hsl(45, 100%, ${60 * pulse}%)`;
-        ctx.beginPath();
-        ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Shard glow
-        ctx.shadowColor = 'hsl(45, 100%, 60%)';
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-    }
+    // Draw shards (with fallback)
+    const shards = currentRoom?.shards ?? [
+      { x: 200, y: 300 },
+      { x: 400, y: 200 },
+      { x: 600, y: 350 }
+    ];
+    
+    shards.forEach((shard, index) => {
+      const time = Date.now() * 0.005;
+      const pulse = Math.sin(time + index) * 0.2 + 0.8;
+      
+      ctx.fillStyle = `hsl(45, 100%, ${60 * pulse}%)`;
+      ctx.beginPath();
+      ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Shard glow
+      ctx.shadowColor = 'hsl(45, 100%, 60%)';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
 
     // Draw cursor attention indicator
+    const cursorX = cursor?.x ?? 400;
+    const cursorY = cursor?.y ?? 300;
+    
     if (isPlaying && !isGameOver) {
       ctx.strokeStyle = 'hsla(180, 100%, 45%, 0.7)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(cursor.x, cursor.y, 20, 0, Math.PI * 2);
+      ctx.arc(cursorX, cursorY, 20, 0, Math.PI * 2);
       ctx.stroke();
       
       ctx.fillStyle = 'hsla(180, 100%, 45%, 0.6)';
       ctx.beginPath();
-      ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
+      ctx.arc(cursorX, cursorY, 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
