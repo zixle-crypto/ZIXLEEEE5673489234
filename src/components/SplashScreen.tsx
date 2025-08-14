@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -12,13 +13,15 @@ interface SplashScreenProps {
   user?: User | null;
 }
 
-type Screen = 'splash' | 'welcome' | 'new-player' | 'returning-player';
+type Screen = 'splash' | 'welcome' | 'enter-email' | 'verify-code';
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
   // If user is already authenticated, complete the flow
   useEffect(() => {
@@ -37,7 +40,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
     }
   }, [currentScreen]);
 
-  const handleNewPlayer = async () => {
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
+
+  const sendVerificationCode = async () => {
     if (!email.trim()) {
       toast({
         title: "Email required",
@@ -47,19 +61,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       return;
     }
 
-    if (!password.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
       toast({
-        title: "Password required",
-        description: "Please enter a password to continue",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long",
+        title: "Invalid email",
+        description: "Please enter a valid email address",
         variant: "destructive"
       });
       return;
@@ -68,11 +74,51 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
+      const { data, error } = await supabase.functions.invoke('send-verification-code', {
+        body: { email: email.trim() }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        toast({
+          title: "Verification code sent!",
+          description: `We've sent a 6-digit code to ${email}. Please check your email.`,
+        });
+        setExpiresAt(new Date(data.expiresAt));
+        setCurrentScreen('verify-code');
+        setResendCooldown(30); // 30 second cooldown
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyCode = async () => {
+    if (!verificationCode.trim() || verificationCode.length !== 6) {
+      toast({
+        title: "Invalid code",
+        description: "Please enter the complete 6-digit verification code",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-code', {
+        body: { 
+          email: email.trim(), 
+          code: verificationCode.trim() 
         }
       });
 
@@ -80,93 +126,48 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
         throw error;
       }
 
-      if (data.user) {
-        if (data.user.email_confirmed_at) {
-          toast({
-            title: "Welcome to Zixle Studios!",
-            description: `Account created successfully for ${email}`,
+      if (data.success) {
+        // If we got tokens, set the session
+        if (data.access_token && data.refresh_token) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token
           });
-          onComplete(email);
-        } else {
-          toast({
-            title: "Check your email!",
-            description: `We've sent a confirmation link to ${email}. Please check your email and click the link to activate your account.`,
-          });
-          setIsLoading(false);
+
+          if (sessionError) {
+            console.error('Session error:', sessionError);
+          }
         }
+
+        toast({
+          title: data.user_created ? "Welcome to Zixle Studios!" : "Welcome back!",
+          description: data.user_created 
+            ? `Account created successfully for ${email}` 
+            : `Successfully verified and logged in as ${email}`,
+        });
+        onComplete(email);
+      } else {
+        throw new Error(data.error || "Invalid verification code");
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create account. Please try again.",
+        title: "Verification failed",
+        description: error.message || "Invalid or expired verification code. Please try again.",
         variant: "destructive"
       });
+      setVerificationCode('');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReturningPlayer = async () => {
-    if (!email.trim()) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address to continue",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!password.trim()) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password to continue",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password
-      });
-
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Invalid credentials",
-            description: "Please check your email and password. If you just signed up, make sure you've confirmed your email address.",
-            variant: "destructive"
-          });
-        } else if (error.message.includes('Email not confirmed')) {
-          toast({
-            title: "Email not confirmed",
-            description: "Please check your email and click the confirmation link before logging in.",
-            variant: "destructive"
-          });
-        } else {
-          throw error;
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.user) {
-        toast({
-          title: "Welcome back!",
-          description: `Successfully logged in as ${email}`,
-        });
-        onComplete(email);
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to login. Please try again.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-    }
+  const getTimeRemaining = (): string => {
+    if (!expiresAt) return '';
+    const now = new Date();
+    const timeLeft = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   if (currentScreen === 'splash') {
@@ -191,73 +192,57 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
               PERCEPTION SHIFT
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Choose your path to begin
+              Enter your email to begin or continue
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
-              onClick={() => setCurrentScreen('new-player')}
+              onClick={() => setCurrentScreen('enter-email')}
               className="w-full bg-perception hover:bg-perception/90 text-white font-mono"
               size="lg"
             >
-              NEW PLAYER
+              ENTER EMAIL
             </Button>
-            <Button
-              onClick={() => setCurrentScreen('returning-player')}
-              variant="outline"
-              className="w-full border-perception text-perception hover:bg-perception/10 font-mono"
-              size="lg"
-            >
-              RETURNING PLAYER
-            </Button>
+            <p className="text-center text-xs text-game-text-dim font-mono">
+              We'll send you a 6-digit code to verify your email
+            </p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (currentScreen === 'new-player') {
+  if (currentScreen === 'enter-email') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-game-surface border-game-border shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-black text-perception font-orbitron">
-              CREATE ACCOUNT
+              ENTER EMAIL
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Enter your email and create a password
+              We'll send you a verification code
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-game-text font-mono">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="bg-game-bg border-game-border text-game-text font-mono"
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-game-text font-mono">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="bg-game-bg border-game-border text-game-text font-mono"
-                  disabled={isLoading}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-game-text font-mono">
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="bg-game-bg border-game-border text-game-text font-mono"
+                disabled={isLoading}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    sendVerificationCode();
+                  }
+                }}
+              />
             </div>
             <div className="flex gap-2">
               <Button
@@ -269,11 +254,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
                 BACK
               </Button>
               <Button
-                onClick={handleNewPlayer}
+                onClick={sendVerificationCode}
                 className="flex-1 bg-perception hover:bg-perception/90 text-white font-mono"
                 disabled={isLoading}
               >
-                {isLoading ? 'CREATING...' : 'CREATE'}
+                {isLoading ? 'SENDING...' : 'SEND CODE'}
               </Button>
             </div>
           </CardContent>
@@ -282,65 +267,97 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
     );
   }
 
-  if (currentScreen === 'returning-player') {
+  if (currentScreen === 'verify-code') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-game-surface border-game-border shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-black text-perception font-orbitron">
-              WELCOME BACK
+              VERIFY CODE
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Enter your email and password
+              Enter the 6-digit code sent to
+            </p>
+            <p className="text-perception text-sm font-mono font-bold">
+              {email}
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-game-text font-mono">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="bg-game-bg border-game-border text-game-text font-mono"
+              <div className="flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(value) => setVerificationCode(value)}
                   disabled={isLoading}
-                />
+                >
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot 
+                      index={0} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                    <InputOTPSlot 
+                      index={1} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                    <InputOTPSlot 
+                      index={2} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                    <InputOTPSlot 
+                      index={3} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                    <InputOTPSlot 
+                      index={4} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                    <InputOTPSlot 
+                      index={5} 
+                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
+                    />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-game-text font-mono">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="bg-game-bg border-game-border text-game-text font-mono"
-                  disabled={isLoading}
-                />
-              </div>
+              
+              {expiresAt && (
+                <p className="text-center text-xs text-game-text-dim font-mono">
+                  Code expires in: {getTimeRemaining()}
+                </p>
+              )}
             </div>
-            <div className="flex gap-2">
+            
+            <div className="space-y-3">
               <Button
-                onClick={() => setCurrentScreen('welcome')}
-                variant="outline"
-                className="flex-1 border-game-border text-game-text hover:bg-game-bg font-mono"
-                disabled={isLoading}
+                onClick={verifyCode}
+                className="w-full bg-perception hover:bg-perception/90 text-white font-mono"
+                disabled={isLoading || verificationCode.length !== 6}
               >
-                BACK
+                {isLoading ? 'VERIFYING...' : 'VERIFY CODE'}
               </Button>
-              <Button
-                onClick={handleReturningPlayer}
-                className="flex-1 bg-perception hover:bg-perception/90 text-white font-mono"
-                disabled={isLoading}
-              >
-                {isLoading ? 'LOGGING IN...' : 'LOGIN'}
-              </Button>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setCurrentScreen('enter-email');
+                    setVerificationCode('');
+                    setExpiresAt(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-game-border text-game-text hover:bg-game-bg font-mono"
+                  disabled={isLoading}
+                >
+                  CHANGE EMAIL
+                </Button>
+                <Button
+                  onClick={sendVerificationCode}
+                  variant="outline"
+                  className="flex-1 border-perception text-perception hover:bg-perception/10 font-mono"
+                  disabled={isLoading || resendCooldown > 0}
+                >
+                  {resendCooldown > 0 ? `RESEND (${resendCooldown}s)` : 'RESEND CODE'}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
