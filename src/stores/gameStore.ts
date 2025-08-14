@@ -5,6 +5,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createRoom, type Room } from '@/lib/roomSystem';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Player {
   x: number;
@@ -34,6 +36,7 @@ interface GameState {
   // Game progress
   roomsCleared: number;
   score: number;
+  totalShards: number;
   startTime: number;
   
   // Game status
@@ -43,6 +46,10 @@ interface GameState {
   
   // Weekly challenge
   weeklySeed: number;
+  
+  // Leaderboard
+  currentRank: number | null;
+  lastRoomReward: number;
 }
 
 interface GameStore extends GameState {
@@ -96,6 +103,7 @@ export const useGameStore = create<GameStore>()(
       
       roomsCleared: 0,
       score: 0,
+      totalShards: 0,
       startTime: Date.now(),
       
       isPlaying: true,
@@ -103,6 +111,8 @@ export const useGameStore = create<GameStore>()(
       isGameOver: false,
       
       weeklySeed: 20241,
+      currentRank: null,
+      lastRoomReward: 0,
 
       // Actions
       initGame: () => {
@@ -123,11 +133,14 @@ export const useGameStore = create<GameStore>()(
           cursor: { x: 400, y: 300 }, // Center of canvas
           roomsCleared: 0,
           score: 0,
+          totalShards: 0,
           startTime: Date.now(),
           isPlaying: true,
           isPaused: false,
           isGameOver: false,
           weeklySeed: 20241,
+          currentRank: null,
+          lastRoomReward: 0,
         });
         
         console.log('✅ Game initialized - isPlaying: true');
@@ -239,11 +252,14 @@ export const useGameStore = create<GameStore>()(
           cursor: { x: 400, y: 300 },
           roomsCleared: 0,
           score: 0,
+          totalShards: 0,
           startTime: Date.now(),
           isPlaying: true,
           isPaused: false,
           isGameOver: false,
           weeklySeed: 20241,
+          currentRank: null,
+          lastRoomReward: 0,
         });
         
         console.log('✅ Game restarted successfully');
@@ -268,9 +284,59 @@ export const useGameStore = create<GameStore>()(
         console.log('✅ Player respawned in room');
       },
 
-      nextRoom: () => {
+      nextRoom: async () => {
         const state = get();
-        const nextRoomNumber = state.roomsCleared + 2; // +1 for current room, +1 for next
+        const currentRoomNumber = state.roomsCleared + 1;
+        const nextRoomNumber = state.roomsCleared + 2;
+        
+        // Calculate shards collected from current room (initial shards - remaining shards)
+        const initialShardCount = createRoom(currentRoomNumber).shards.length;
+        const shardsCollected = initialShardCount - state.currentRoom.shards.length;
+        
+        console.log(`🚪 Completing room ${currentRoomNumber} with ${shardsCollected}/${initialShardCount} shards`);
+        
+        try {
+          // Call the complete-room edge function to update leaderboard
+          const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
+            body: {
+              roomNumber: currentRoomNumber,
+              currentScore: state.score + 500, // Include room completion bonus
+              shardsCollected: shardsCollected
+            }
+          });
+
+          if (error) {
+            console.error('Error completing room:', error);
+            toast({
+              title: "Warning",
+              description: "Room completed but leaderboard not updated",
+              variant: "destructive"
+            });
+          } else if (roomCompletionData?.success) {
+            console.log('Room completion result:', roomCompletionData);
+            toast({
+              title: "Room Complete!",
+              description: roomCompletionData.message,
+            });
+            
+            // Update local state with shard rewards
+            set(prevState => ({
+              ...prevState,
+              totalShards: prevState.totalShards + roomCompletionData.shardsEarned,
+              lastRoomReward: roomCompletionData.shardsEarned,
+              currentRank: roomCompletionData.leaderboardData?.rank || prevState.currentRank
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to complete room:', error);
+          toast({
+            title: "Warning", 
+            description: "Room completed offline - progress may not be saved",
+            variant: "destructive"
+          });
+        }
+        
+        // Create next room and advance game state
         const newRoom = createInitialRoom(Math.min(nextRoomNumber, 100));
         const newPlayer = createInitialPlayer();
         
@@ -285,7 +351,7 @@ export const useGameStore = create<GameStore>()(
           score: state.score + 500, // Bonus for completing room
         });
         
-        console.log(`🚪 Advanced to room ${nextRoomNumber}`);
+        console.log(`✅ Advanced to room ${nextRoomNumber}`);
       },
     }),
     {

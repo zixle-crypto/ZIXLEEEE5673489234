@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard: {
+        Row: {
+          best_score: number
+          created_at: string
+          email: string
+          id: string
+          last_played: string
+          rooms_completed: number
+          total_shards: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_score?: number
+          created_at?: string
+          email: string
+          id?: string
+          last_played?: string
+          rooms_completed?: number
+          total_shards?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_score?: number
+          created_at?: string
+          email?: string
+          id?: string
+          last_played?: string
+          rooms_completed?: number
+          total_shards?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -205,6 +241,27 @@ export type Database = {
       cleanup_expired_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_leaderboard_with_context: {
+        Args: { p_user_id?: string }
+        Returns: {
+          best_score: number
+          email: string
+          is_current_user: boolean
+          rank: number
+          rooms_completed: number
+          total_shards: number
+          user_id: string
+        }[]
+      }
+      update_leaderboard: {
+        Args: {
+          p_current_score: number
+          p_email: string
+          p_shards_earned: number
+          p_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
