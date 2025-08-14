@@ -86,10 +86,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (signUpError) {
       // If user already exists, that's okay - we'll sign them in
-      if (signUpError.message.includes('already registered')) {
+      if (signUpError.message.includes('already been registered') || signUpError.code === 'email_exists') {
         console.log('User already exists, proceeding with sign-in');
         
-        // Generate a sign-in token for the user
+        // Generate a sign-in token for the existing user
         const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
           type: 'magiclink',
           email: email.toLowerCase(),
