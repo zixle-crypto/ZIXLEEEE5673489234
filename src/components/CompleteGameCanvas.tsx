@@ -322,18 +322,20 @@ export const CompleteGameCanvas = () => {
         ctx.stroke();
       }
 
-      // Draw cursor attention indicator
-      const cursor = cursorRef.current;
-      ctx.strokeStyle = 'hsla(180, 100%, 45%, 0.7)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(cursor.x, cursor.y, 80, 0, Math.PI * 2);
-      ctx.stroke();
+      // Draw cursor attention indicator (only when game is active)
+      if (isPlaying && !isPaused && !isGameOver) {
+        const cursor = cursorRef.current;
+        ctx.strokeStyle = 'hsla(180, 100%, 45%, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 80, 0, Math.PI * 2);
+        ctx.stroke();
 
-      ctx.fillStyle = 'hsla(180, 100%, 45%, 0.6)';
-      ctx.beginPath();
-      ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.fillStyle = 'hsla(180, 100%, 45%, 0.6)';
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Draw UI
       ctx.fillStyle = '#ffffff';
