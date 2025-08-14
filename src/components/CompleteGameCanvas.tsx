@@ -73,7 +73,7 @@ export const CompleteGameCanvas = () => {
     canvas.width = 800;
     canvas.height = 600;
 
-    // Sync refs with store state
+    // Initial sync with store state
     playerRef.current = { ...player };
     currentRoomRef.current = { ...currentRoom };
     roomNumberRef.current = roomsCleared + 1;
@@ -170,8 +170,16 @@ export const CompleteGameCanvas = () => {
         }
       });
 
-      // Keep in bounds
-      player.x = Math.max(0, Math.min(776, player.x));
+      // Ground collision - fix invisible wall at edges
+      if (player.y + player.height >= 576) { // Floor at y=576 instead of variable
+        player.y = 576 - player.height;
+        player.velY = 0;
+        player.onGround = true;
+        onPlatform = true;
+      }
+
+      // Keep in bounds - fix side wall collision
+      player.x = Math.max(0, Math.min(800 - player.width, player.x));
 
       // Check shard collection
       room.shards = room.shards.filter((shard, index) => {
@@ -357,10 +365,10 @@ export const CompleteGameCanvas = () => {
       }
     };
 
-    // Game loop
+    // Game loop with performance optimization
     const gameLoop = () => {
-      // Sync refs with store state when game restarts/respawns
-      if (Math.abs(playerRef.current.x - player.x) > 50 || Math.abs(playerRef.current.y - player.y) > 50) {
+      // Only sync when there's a significant position change (respawn/restart)
+      if (Math.abs(playerRef.current.x - player.x) > 100 || Math.abs(playerRef.current.y - player.y) > 100) {
         console.log('🔄 Syncing player position from store');
         playerRef.current = { ...player };
         currentRoomRef.current = { ...currentRoom };
@@ -383,7 +391,7 @@ export const CompleteGameCanvas = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove, isPlaying, isPaused, isGameOver, score, collectShard, playerDie, updateCursor, player, currentRoom, roomsCleared]);
+  }, [handleKeyDown, handleKeyUp, handleMouseMove]); // Remove store dependencies to prevent re-initialization
 
   return (
     <div className="w-full h-full flex items-center justify-center">
