@@ -82,7 +82,7 @@ export const GameHUD = () => {
 
       {/* Pause Overlay */}
       {isPaused && (
-        <div className="absolute inset-0 bg-game-bg/80 flex items-center justify-center backdrop-blur-sm">
+        <div className="absolute inset-0 bg-game-bg/80 flex items-center justify-center backdrop-blur-sm pointer-events-auto">
           <div className="bg-hud-bg border border-hud-border rounded-lg p-6 text-center">
             <h2 className="text-2xl font-bold text-perception mb-2">PAUSED</h2>
             <p className="text-game-text-dim mb-4">
@@ -97,7 +97,7 @@ export const GameHUD = () => {
 
       {/* Game Over Overlay */}
       {isGameOver && (
-        <div className="absolute inset-0 bg-game-bg/90 flex items-center justify-center backdrop-blur-sm">
+        <div className="absolute inset-0 bg-game-bg/90 flex items-center justify-center backdrop-blur-sm pointer-events-auto">
           <div className="bg-hud-bg border border-hud-border rounded-lg p-8 text-center max-w-md font-mono">
             <h2 className="text-3xl font-black text-game-danger mb-4 font-orbitron">PERCEPTION LOST</h2>
             
