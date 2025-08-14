@@ -1,7 +1,7 @@
-import { PerceptionShift } from '@/components/PerceptionShift';
+import { CleanPerceptionShift } from '@/components/CleanPerceptionShift';
 
 const Index = () => {
-  return <PerceptionShift />;
+  return <CleanPerceptionShift />;
 };
 
 export default Index;

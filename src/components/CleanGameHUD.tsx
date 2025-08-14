@@ -1,15 +1,14 @@
 /**
- * Game HUD component - displays timer, score, room count
+ * Clean game HUD component
  */
 
 import React from 'react';
-import { useGameStore } from '@/stores/useGameStore';
+import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 
 export const GameHUD = () => {
   const {
     score,
-    gameTime,
     roomsCleared,
     weeklySeed,
     isPlaying,
@@ -27,21 +26,21 @@ export const GameHUD = () => {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-    return (
-      <div className="absolute inset-0 pointer-events-none font-mono">
-        {/* Top HUD Bar */}
-        <div className="flex justify-between items-start p-4">
-          {/* Left: Timer & Score */}
-          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
-            <div className="flex flex-col gap-1">
-              <div className="text-perception text-sm font-mono">
-                {formatTime(gameTime)}
-              </div>
-              <div className="text-game-text text-lg font-bold">
-                {score.toLocaleString()}
-              </div>
+  return (
+    <div className="absolute inset-0 pointer-events-none font-mono">
+      {/* Top HUD Bar */}
+      <div className="flex justify-between items-start p-4">
+        {/* Left: Score */}
+        <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+          <div className="flex flex-col gap-1">
+            <div className="text-perception text-sm font-mono">
+              SCORE
+            </div>
+            <div className="text-game-text text-lg font-bold">
+              {score.toLocaleString()}
             </div>
           </div>
+        </div>
 
         {/* Right: Room Count & Weekly Seed */}
         <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm text-right">
@@ -106,10 +105,6 @@ export const GameHUD = () => {
               <div className="flex justify-between text-game-text">
                 <span>Score:</span>
                 <span className="text-perception">{score.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-game-text">
-                <span>Time:</span>
-                <span>{formatTime(gameTime)}</span>
               </div>
               <div className="flex justify-between text-game-text">
                 <span>Rooms:</span>

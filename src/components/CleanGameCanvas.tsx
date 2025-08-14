@@ -1,11 +1,9 @@
 /**
- * Main game canvas component with 60 FPS game loop
+ * Clean, working game canvas with guaranteed rendering
  */
 
 import React, { useRef, useEffect, useCallback } from 'react';
-import { useGameStore } from '@/stores/useGameStore';
-import { calculateAttentionScore, TilePosition } from '@/lib/perception';
-import { Vector2 } from '@/lib/gameTypes';
+import { useGameStore } from '@/stores/gameStore';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -23,16 +21,11 @@ export const GameCanvas = () => {
     isPlaying,
     isPaused,
     isGameOver,
-    gameTime,
-    score,
-    dwellStartTime,
     updatePlayer,
     updateCursor,
     handleInput,
     collectShard,
-    playerDie,
-    updateTiles,
-    nextRoom
+    playerDie
   } = useGameStore();
 
   // Handle keyboard input
@@ -46,7 +39,7 @@ export const GameCanvas = () => {
     e.preventDefault();
   }, []);
 
-  // Handle mouse movement for attention tracking
+  // Handle mouse movement
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -57,50 +50,77 @@ export const GameCanvas = () => {
     updateCursor(x, y);
   }, [updateCursor]);
 
-  // Render function - MUST be defined before gameLoop
+  // Render function - clean with no console spam
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) return;
 
-    // Clear and fill background
-    ctx.fillStyle = '#1a1f2e'; // Dark blue
-    ctx.fillRect(0, 0, 800, 600);
+    // Clear canvas with dark background
+    ctx.fillStyle = '#1a1f2e';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Draw test rectangle
-    ctx.fillStyle = '#20d4d4'; // Bright teal
-    ctx.fillRect(50, 50, 100, 100);
-    
-    // Draw player as red square
-    if (player) {
-      ctx.fillStyle = '#ff0000'; // Bright red
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-    }
-    
-    // Draw ground
+    // Draw ground platform
     ctx.fillStyle = '#2a2f3e';
-    ctx.fillRect(0, 500, 800, 100);
+    ctx.fillRect(0, 500, CANVAS_WIDTH, 100);
+    
+    // Draw player
+    if (player) {
+      ctx.fillStyle = player.alive ? '#20d4d4' : '#ef4444';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      
+      // Player glow
+      if (player.alive) {
+        ctx.shadowColor = '#20d4d4';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.shadowBlur = 0;
+      }
+    }
     
     // Draw shards
     if (currentRoom?.shards) {
-      currentRoom.shards.forEach((shard, index) => {
-        ctx.fillStyle = '#fbbf24';
+      currentRoom.shards.forEach((shard) => {
+        const time = Date.now() * 0.005;
+        const pulse = Math.sin(time) * 0.2 + 0.8;
+        
+        ctx.fillStyle = `hsl(45, 100%, ${60 * pulse}%)`;
         ctx.beginPath();
-        ctx.arc(shard.x, shard.y, 10, 0, Math.PI * 2);
+        ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Shard glow
+        ctx.shadowColor = 'hsl(45, 100%, 60%)';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       });
     }
 
-    // Draw debug text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '20px Arial';
-    ctx.fillText('GAME WORKING!', 300, 100);
-    if (player) {
-      ctx.fillText(`Player: ${Math.floor(player.x)}, ${Math.floor(player.y)}`, 300, 130);
+    // Draw cursor attention indicator
+    if (isPlaying && !isGameOver) {
+      ctx.strokeStyle = 'hsla(180, 100%, 45%, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cursor.x, cursor.y, 20, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = 'hsla(180, 100%, 45%, 0.6)';
+      ctx.beginPath();
+      ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
+      ctx.fill();
     }
-  }, [player, currentRoom]);
 
-  // Game loop
+    // Draw room boundary
+    ctx.strokeStyle = 'hsl(221, 20%, 25%)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  }, [player, currentRoom, cursor, isPlaying, isGameOver]);
+
+  // Game loop - clean with no console spam
   const gameLoop = useCallback((currentTime: number) => {
     const deltaTime = currentTime - lastTimeRef.current;
     lastTimeRef.current = currentTime;
@@ -109,46 +129,40 @@ export const GameCanvas = () => {
       // Update game state
       handleInput(keysRef.current);
       updatePlayer(deltaTime);
-      updateTiles();
 
       // Check shard collection
-      if (currentRoom?.shards) {
+      if (currentRoom?.shards && player) {
         currentRoom.shards.forEach((shard, index) => {
-          if (player) {
-            const distance = Math.sqrt(
-              Math.pow(player.x - shard.x, 2) + Math.pow(player.y - shard.y, 2)
-            );
-            if (distance < 30) {
-              collectShard(index);
-            }
+          const distance = Math.sqrt(
+            Math.pow(player.x - shard.x, 2) + Math.pow(player.y - shard.y, 2)
+          );
+          if (distance < 30) {
+            collectShard(index);
           }
         });
       }
 
-      // Simple death condition
+      // Death condition
       if (player && player.y > CANVAS_HEIGHT + 50) {
         playerDie();
       }
     }
 
-    // ALWAYS render
+    // Render
     render();
 
+    // Continue loop
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, isPaused, isGameOver, player, currentRoom, handleInput, updatePlayer, updateTiles, collectShard, playerDie, render]);
+  }, [isPlaying, isPaused, isGameOver, player, currentRoom, handleInput, updatePlayer, collectShard, playerDie, render]);
 
-  // Setup event listeners and game loop
+  // Setup canvas and game loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) {
-      console.log('Canvas not found in useEffect');
-      return;
-    }
+    if (!canvas) return;
 
-    console.log('Setting up canvas:', canvas);
+    // Set canvas size
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
-    console.log('Canvas size set to:', CANVAS_WIDTH, 'x', CANVAS_HEIGHT);
 
     // Add event listeners
     window.addEventListener('keydown', handleKeyDown);
@@ -158,12 +172,6 @@ export const GameCanvas = () => {
     // Start game loop
     lastTimeRef.current = performance.now();
     animationRef.current = requestAnimationFrame(gameLoop);
-    
-    // Force initial render (only log this once)
-    setTimeout(() => {
-      console.log('Game initialized and rendering started');
-      render();
-    }, 100);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -173,19 +181,19 @@ export const GameCanvas = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove, gameLoop, render]);
+  }, [handleKeyDown, handleKeyUp, handleMouseMove, gameLoop]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={800}
-      height={600}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
       className="border border-game-border bg-game-bg rounded-lg cursor-none block"
       style={{
         width: '800px',
         height: '600px',
         display: 'block',
-        backgroundColor: 'hsl(221, 39%, 11%)'
+        backgroundColor: '#1a1f2e'
       }}
     />
   );
