@@ -69,79 +69,125 @@ export const createRoom = (roomId: number): Room => {
   }
 };
 
-// Spike-focused rooms
+// Spike-focused rooms with increased difficulty
 const createSpikeRoom = (id: number, difficulty: number): Room => {
-  const spikeCount = Math.min(3, 2 + Math.floor(difficulty / 2));
+  const spikeCount = Math.min(6, 3 + Math.floor(difficulty / 1.5)); // More spikes
   
-  // Ensure platforms are reachable with proper spacing
+  // Smaller, more challenging platforms with wider gaps
   const platforms = [
-    { x: 0, y: 520, width: 120, height: 20 }, // Start platform
-    { x: 200, y: 420, width: 120, height: 20 }, // Jump platform
-    { x: 400, y: 450, width: 120, height: 20 }, // Middle platform
-    { x: 600, y: 420, width: 120, height: 20 }, // End platform
-    { x: 680, y: 520, width: 120, height: 20 }  // Exit platform
+    { x: 0, y: 520, width: 80, height: 20 }, // Start platform (smaller)
+    { x: 150, y: 400, width: 80, height: 20 }, // Jump platform (harder jump)
+    { x: 320, y: 380, width: 60, height: 20 }, // Smaller middle platform
+    { x: 480, y: 360, width: 80, height: 20 }, // Higher platform
+    { x: 650, y: 400, width: 80, height: 20 }, // End platform
+    { x: 720, y: 520, width: 80, height: 20 }  // Exit platform
   ];
   
+  // More dangerous tiles with tighter spacing
   const tiles = Array.from({ length: spikeCount }, (_, i) => ({
-    x: 250 + i * 150,
-    y: 380,
+    x: 200 + i * 80, // Closer together
+    y: 340 - (i % 2) * 20, // Varying heights
     width: 32,
     height: 32,
     type: 'danger_spike' as const,
     isAttended: false,
-    safeWhenAttended: true
+    safeWhenAttended: Math.random() > 0.3 // 70% safe when attended, 30% reverse logic
   }));
+  
+  // Add some reverse logic tiles for higher difficulty
+  if (difficulty > 3) {
+    tiles.push({
+      x: 120,
+      y: 360,
+      width: 32,
+      height: 32,
+      type: 'danger_spike' as const,
+      isAttended: false,
+      safeWhenAttended: false // Reverse logic - dangerous when attended
+    });
+  }
   
   return {
     id,
     platforms,
     tiles,
     shards: [
-      { x: 260, y: 380 },
-      { x: 460, y: 410 },
-      { x: 660, y: 380 }
-    ].slice(0, 2 + Math.floor(difficulty / 3)),
-    spawn: { x: 50, y: 480 },
-    exit: { x: 720, y: 480 },
+      { x: 115, y: 360 },
+      { x: 280, y: 340 },
+      { x: 440, y: 320 },
+      { x: 610, y: 360 }
+    ].slice(0, 2 + Math.floor(difficulty / 2)), // More shards to collect
+    spawn: { x: 30, y: 480 },
+    exit: { x: 750, y: 360 }, // Higher exit requiring precise jumping
     exitActive: false
   };
 };
 
-// Bridge-focused rooms
+// Bridge-focused rooms with much higher difficulty
 const createBridgeRoom = (id: number, difficulty: number): Room => {
-  const bridgeSegments = Math.min(8, 4 + difficulty);
+  const bridgeSegments = Math.min(12, 6 + difficulty); // Longer bridges
   
   const platforms = [
-    { x: 0, y: 520, width: 150, height: 20 },
-    { x: 650, y: 520, width: 150, height: 20 },
+    { x: 0, y: 520, width: 100, height: 20 }, // Smaller start platform
+    { x: 700, y: 520, width: 100, height: 20 }, // Smaller end platform
   ];
   
-  // Add helper platforms for higher difficulties
-  if (difficulty > 3) {
-    platforms.push({ x: 300, y: 450, width: 100, height: 20 });
+  // Multiple bridge segments with gaps for higher difficulty
+  const tiles = [];
+  
+  // First bridge segment
+  for (let i = 0; i < Math.ceil(bridgeSegments / 2); i++) {
+    tiles.push({
+      x: 100 + i * 32,
+      y: 480,
+      width: 32,
+      height: 20,
+      type: 'bridge' as const,
+      isAttended: false,
+      safeWhenAttended: i % 2 === 0 || difficulty < 3 // Some reverse logic at higher difficulties
+    });
   }
   
-  const tiles = Array.from({ length: bridgeSegments }, (_, i) => ({
-    x: 150 + i * 32,
-    y: 500,
-    width: 32,
-    height: 20,
-    type: 'bridge' as const,
-    isAttended: false,
-    safeWhenAttended: true
-  }));
+  // Gap in the middle (player must jump)
+  
+  // Second bridge segment
+  for (let i = 0; i < Math.floor(bridgeSegments / 2); i++) {
+    tiles.push({
+      x: 400 + i * 32,
+      y: 460, // Slightly higher
+      width: 32,
+      height: 20,
+      type: 'bridge' as const,
+      isAttended: false,
+      safeWhenAttended: i % 3 !== 0 || difficulty < 5 // More complex logic
+    });
+  }
+  
+  // Add dangerous spikes between bridges for higher difficulty
+  if (difficulty > 2) {
+    tiles.push({
+      x: 350,
+      y: 500,
+      width: 32,
+      height: 32,
+      type: 'danger_spike' as const,
+      isAttended: false,
+      safeWhenAttended: false // Always dangerous
+    });
+  }
   
   return {
     id,
     platforms,
     tiles,
     shards: [
-      { x: 75, y: 480 },
-      { x: 150 + (bridgeSegments * 16), y: 460 }, // Above bridge middle
-      { x: 725, y: 480 },
-    ],
-    spawn: { x: 50, y: 480 },
-    exit: { x: 720, y: 480 },
+      { x: 50, y: 480 },
+      { x: 200, y: 440 }, // Above first bridge
+      { x: 500, y: 420 }, // Above second bridge
+      { x: 750, y: 480 },
+    ].slice(0, 3 + Math.floor(difficulty / 3)),
+    spawn: { x: 30, y: 480 },
+    exit: { x: 750, y: 480 },
     exitActive: false
   };
 };

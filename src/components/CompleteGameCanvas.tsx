@@ -210,9 +210,11 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Death condition
-      if (player.y > 650) {
+      // Death condition - fall damage (more sensitive)
+      if (player.y > 600) { // Die faster when falling
+        console.log('💀 Player fell to death at y:', player.y);
         playerDie();
+        return;
       }
     };
 
