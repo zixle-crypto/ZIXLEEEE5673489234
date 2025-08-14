@@ -5,18 +5,27 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface SplashScreenProps {
-  onComplete: (username: string) => void;
+  onComplete: (userEmail: string) => void;
+  user?: User | null;
 }
 
 type Screen = 'splash' | 'welcome' | 'new-player' | 'returning-player';
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // If user is already authenticated, complete the flow
+  useEffect(() => {
+    if (user && user.email_confirmed_at) {
+      onComplete(user.email || '');
+    }
+  }, [user, onComplete]);
 
   useEffect(() => {
     // Auto transition from splash screen after 3 seconds
