@@ -384,7 +384,7 @@ export const CompleteGameCanvas = () => {
     currentRoomRef.current = { ...currentRoom };
     roomNumberRef.current = roomsCleared + 1;
     console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
-  }, [player.x, player.y, currentRoom.id, roomsCleared]);
+  }, [player.x, player.y, currentRoom.id, roomsCleared, isGameOver, isPlaying]); // Added isGameOver and isPlaying to ensure respawn sync
 
   return (
     <div className="w-full h-full flex items-center justify-center">
