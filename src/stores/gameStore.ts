@@ -56,6 +56,7 @@ interface GameStore extends GameState {
   pauseGame: () => void;
   resumeGame: () => void;
   restartGame: () => void;
+  respawnInRoom: () => void;
   nextRoom: () => void;
 }
 
@@ -246,6 +247,25 @@ export const useGameStore = create<GameStore>()(
         });
         
         console.log('✅ Game restarted successfully');
+      },
+
+      respawnInRoom: () => {
+        console.log('🔄 Respawning in current room');
+        const state = get();
+        const newPlayer = createInitialPlayer();
+        
+        // Position player at current room's spawn point
+        newPlayer.x = state.currentRoom.spawn.x;
+        newPlayer.y = state.currentRoom.spawn.y;
+        
+        set({
+          player: newPlayer,
+          isPlaying: true,
+          isPaused: false,
+          isGameOver: false,
+        });
+        
+        console.log('✅ Player respawned in room');
       },
 
       nextRoom: () => {

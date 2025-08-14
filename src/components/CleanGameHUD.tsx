@@ -16,7 +16,8 @@ export const GameHUD = () => {
     isGameOver,
     pauseGame,
     resumeGame,
-    restartGame
+    restartGame,
+    respawnInRoom
   } = useGameStore();
 
   const formatTime = (ms: number): string => {
@@ -122,7 +123,7 @@ export const GameHUD = () => {
             <div className="flex gap-3 justify-center">
               <Button
                 variant="outline"
-                onClick={restartGame}
+                onClick={respawnInRoom}
                 className="bg-hud-bg border-hud-border text-game-text hover:bg-perception/20 pointer-events-auto"
               >
                 Try Again
