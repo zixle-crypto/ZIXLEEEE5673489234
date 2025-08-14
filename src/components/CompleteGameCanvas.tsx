@@ -210,8 +210,8 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Death condition - fall damage (more sensitive)
-      if (player.y > 600) { // Die faster when falling
+      // Death condition - fall damage (die when hitting ground level)
+      if (player.y > 540) { // Die when falling to ground level, not way below screen
         console.log('💀 Player fell to death at y:', player.y);
         playerDie();
         return;
