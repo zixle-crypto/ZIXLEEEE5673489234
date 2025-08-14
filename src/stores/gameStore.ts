@@ -223,15 +223,29 @@ export const useGameStore = create<GameStore>()(
 
       restartGame: () => {
         console.log('🔄 Restart game called');
+        
+        // Reset game state immediately
+        const newPlayer = createInitialPlayer();
+        const newRoom = createInitialRoom(1);
+        
+        // Position player at spawn point
+        newPlayer.x = newRoom.spawn.x;
+        newPlayer.y = newRoom.spawn.y;
+        
         set({
+          player: newPlayer,
+          currentRoom: newRoom,
+          cursor: { x: 400, y: 300 },
+          roomsCleared: 0,
+          score: 0,
+          startTime: Date.now(),
+          isPlaying: true,
+          isPaused: false,
           isGameOver: false,
-          isPlaying: false,
-          isPaused: false
+          weeklySeed: 20241,
         });
-        // Use setTimeout to ensure state update happens before init
-        setTimeout(() => {
-          get().initGame();
-        }, 0);
+        
+        console.log('✅ Game restarted successfully');
       },
 
       nextRoom: () => {
