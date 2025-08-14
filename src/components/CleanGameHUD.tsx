@@ -123,8 +123,9 @@ export const GameHUD = () => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  console.log('Try Again clicked');
+                  console.log('Try Again clicked, isGameOver before:', isGameOver);
                   restartGame();
+                  console.log('Try Again clicked, isGameOver after:', isGameOver);
                 }}
                 className="bg-hud-bg border-hud-border text-game-text hover:bg-perception/20 pointer-events-auto"
               >
@@ -133,8 +134,9 @@ export const GameHUD = () => {
               <Button
                 variant="default"
                 onClick={() => {
-                  console.log('New Run clicked');
+                  console.log('New Run clicked, isGameOver before:', isGameOver);
                   restartGame();
+                  console.log('New Run clicked, isGameOver after:', isGameOver);
                 }}
                 className="bg-perception text-game-bg hover:bg-perception-glow pointer-events-auto"
               >
