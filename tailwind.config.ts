@@ -80,6 +80,10 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+			fontFamily: {
+				'orbitron': ['Orbitron', 'monospace'],
+				'mono': ['Roboto Mono', 'monospace'],
+			},
 			keyframes: {
 				'accordion-down': {
 					from: {

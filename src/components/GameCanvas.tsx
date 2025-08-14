@@ -5,6 +5,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/stores/useGameStore';
 import { calculateAttentionScore, TilePosition } from '@/lib/perception';
+import { Vector2 } from '@/lib/gameTypes';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -29,7 +30,9 @@ export const GameCanvas = () => {
     updateCursor,
     handleInput,
     collectShard,
-    playerDie
+    playerDie,
+    updateTiles,
+    nextRoom
   } = useGameStore();
 
   // Handle keyboard input
@@ -63,6 +66,7 @@ export const GameCanvas = () => {
       // Update game state
       handleInput(keysRef.current);
       updatePlayer(deltaTime);
+      updateTiles(); // Update tile states based on attention
 
       // Check shard collection
       currentRoom.shards.forEach((shard, index) => {
@@ -74,6 +78,17 @@ export const GameCanvas = () => {
         }
       });
 
+      // Check if player reached exit
+      const exitDistance = Math.sqrt(
+        Math.pow(player.x - currentRoom.exit.x, 2) + Math.pow(player.y - currentRoom.exit.y, 2)
+      );
+      if (exitDistance < 40 && currentRoom.shards.length === 0) {
+        nextRoom();
+      }
+
+      // Tile collision detection
+      checkTileCollisions();
+
       // Simple death condition (fall off screen)
       if (player.y > CANVAS_HEIGHT + 100) {
         playerDie();
@@ -84,7 +99,48 @@ export const GameCanvas = () => {
     render();
 
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, isPaused, isGameOver, player, currentRoom, handleInput, updatePlayer, collectShard, playerDie]);
+  }, [isPlaying, isPaused, isGameOver, player, currentRoom, handleInput, updatePlayer, updateTiles, collectShard, playerDie, nextRoom]);
+
+  // Collision detection for tiles
+  const checkTileCollisions = useCallback(() => {
+    currentRoom.tiles.forEach(tile => {
+      if (isPlayerCollidingWithTile(player, tile)) {
+        handleTileCollision(tile);
+      }
+    });
+  }, [player, currentRoom.tiles]);
+
+  const isPlayerCollidingWithTile = (player: any, tile: any): boolean => {
+    return (
+      player.x < tile.x + tile.width &&
+      player.x + player.width > tile.x &&
+      player.y < tile.y + tile.height &&
+      player.y + player.height > tile.y
+    );
+  };
+
+  const handleTileCollision = (tile: any) => {
+    const currentState = tile.isAttended ? tile.safeState : tile.dangerState;
+    
+    switch (currentState) {
+      case 'spike_stair':
+        if (!tile.isAttended) {
+          playerDie(); // Hit spikes
+        }
+        break;
+      case 'platform_saw':
+        if (!tile.isAttended) {
+          playerDie(); // Hit spinning saw
+        }
+        break;
+      case 'solid':
+        // Platform collision - stop player movement
+        break;
+      case 'empty':
+        // No collision for gaps/doors
+        break;
+    }
+  };
 
   // Render function
   const render = useCallback(() => {
@@ -92,44 +148,34 @@ export const GameCanvas = () => {
     const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) return;
 
-    // Clear canvas
-    ctx.fillStyle = 'hsl(221, 39%, 11%)'; // Game background
+    // Clear canvas with animated background
+    const time = Date.now() * 0.001;
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGradient.addColorStop(0, `hsl(221, 39%, ${11 + Math.sin(time * 0.5) * 2}%)`);
+    bgGradient.addColorStop(1, `hsl(221, 39%, ${8 + Math.sin(time * 0.3) * 1}%)`);
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw ground
-    ctx.fillStyle = 'hsl(221, 30%, 15%)';
-    ctx.fillRect(0, 500, CANVAS_WIDTH, 100);
-
-    // Draw player
-    ctx.fillStyle = player.alive ? 'hsl(180, 100%, 45%)' : 'hsl(0, 85%, 55%)';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-
-    // Add player glow effect
-    if (player.alive) {
-      ctx.shadowColor = 'hsl(180, 100%, 45%)';
-      ctx.shadowBlur = 10;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-      ctx.shadowBlur = 0;
-    }
-
-    // Draw perception shards
-    currentRoom.shards.forEach((shard) => {
-      const time = Date.now() * 0.005;
-      const pulse = Math.sin(time) * 0.2 + 0.8;
-      
-      ctx.fillStyle = `hsl(45, 100%, ${60 * pulse}%)`;
-      ctx.beginPath();
-      ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Glow effect
-      ctx.shadowColor = 'hsl(45, 100%, 60%)';
-      ctx.shadowBlur = 15;
-      ctx.beginPath();
-      ctx.arc(shard.x, shard.y, 8 * pulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+    // Draw ambiguous tiles
+    currentRoom.tiles.forEach(tile => {
+      drawAmbiguousTile(ctx, tile, time);
     });
+
+    // Draw ground platforms
+    ctx.fillStyle = 'hsl(221, 30%, 15%)';
+    ctx.shadowColor = 'hsl(180, 100%, 45%)';
+    ctx.shadowBlur = 5;
+    ctx.fillRect(0, 500, CANVAS_WIDTH, 100);
+    ctx.shadowBlur = 0;
+
+    // Draw player with enhanced effects
+    drawPlayer(ctx, player, time);
+
+    // Draw perception shards with enhanced effects
+    drawPerceptionShards(ctx, currentRoom.shards, time);
+
+    // Draw exit portal
+    drawExitPortal(ctx, currentRoom.exit, time);
 
     // Draw attention indicator at cursor
     if (isPlaying && !isGameOver) {
@@ -149,12 +195,169 @@ export const GameCanvas = () => {
       ctx.fill();
     }
 
-    // Draw room boundaries
+    // Draw room boundaries with glow
     ctx.strokeStyle = 'hsl(221, 20%, 25%)';
     ctx.lineWidth = 2;
+    ctx.shadowColor = 'hsl(180, 100%, 45%)';
+    ctx.shadowBlur = 2;
     ctx.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.shadowBlur = 0;
 
   }, [player, currentRoom, cursor, isPlaying, isGameOver, dwellStartTime]);
+
+  // Draw ambiguous tile with state-based rendering
+  const drawAmbiguousTile = (ctx: CanvasRenderingContext2D, tile: any, time: number) => {
+    const currentState = tile.isAttended ? tile.safeState : tile.dangerState;
+    const isAnimating = tile.animating && (Date.now() - tile.lastStateChange) < 300;
+    
+    ctx.save();
+    
+    if (isAnimating) {
+      const progress = (Date.now() - tile.lastStateChange) / 300;
+      const scale = 1 + Math.sin(progress * Math.PI) * 0.2;
+      ctx.translate(tile.x + tile.width / 2, tile.y + tile.height / 2);
+      ctx.scale(scale, scale);
+      ctx.translate(-tile.width / 2, -tile.height / 2);
+    } else {
+      ctx.translate(tile.x, tile.y);
+    }
+    
+    switch (currentState) {
+      case 'solid':
+        // Safe platform
+        ctx.fillStyle = tile.isAttended ? 'hsl(120, 60%, 50%)' : 'hsl(0, 0%, 50%)';
+        ctx.fillRect(0, 0, tile.width, tile.height);
+        if (tile.isAttended) {
+          ctx.shadowColor = 'hsl(120, 60%, 50%)';
+          ctx.shadowBlur = 10;
+          ctx.fillRect(0, 0, tile.width, tile.height);
+        }
+        break;
+        
+      case 'spike_stair':
+        // Spikes
+        ctx.fillStyle = 'hsl(0, 85%, 55%)';
+        for (let i = 0; i < tile.width; i += 8) {
+          ctx.beginPath();
+          ctx.moveTo(i, tile.height);
+          ctx.lineTo(i + 4, 0);
+          ctx.lineTo(i + 8, tile.height);
+          ctx.fill();
+        }
+        ctx.shadowColor = 'hsl(0, 85%, 55%)';
+        ctx.shadowBlur = 8;
+        break;
+        
+      case 'platform_saw':
+        // Spinning saw
+        const rotation = time * 10;
+        ctx.translate(tile.width / 2, tile.height / 2);
+        ctx.rotate(rotation);
+        ctx.fillStyle = 'hsl(0, 85%, 55%)';
+        for (let i = 0; i < 8; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(12, 0);
+          ctx.lineTo(8, 4);
+          ctx.fill();
+          ctx.rotate(Math.PI / 4);
+        }
+        break;
+        
+      case 'empty':
+        // Gap/door - no visual
+        break;
+    }
+    
+    ctx.restore();
+  };
+
+  // Enhanced player rendering
+  const drawPlayer = (ctx: CanvasRenderingContext2D, player: any, time: number) => {
+    ctx.save();
+    
+    const pulse = Math.sin(time * 8) * 0.1 + 0.9;
+    ctx.fillStyle = player.alive ? `hsl(180, 100%, ${45 * pulse}%)` : 'hsl(0, 85%, 55%)';
+    
+    if (player.alive) {
+      ctx.shadowColor = 'hsl(180, 100%, 45%)';
+      ctx.shadowBlur = 15;
+    }
+    
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Add movement trail effect
+    if (Math.abs(player.velX) > 1) {
+      ctx.fillStyle = `hsla(180, 100%, 45%, 0.3)`;
+      ctx.fillRect(player.x - player.velX, player.y, player.width, player.height);
+    }
+    
+    ctx.restore();
+  };
+
+  // Enhanced shard rendering
+  const drawPerceptionShards = (ctx: CanvasRenderingContext2D, shards: Vector2[], time: number) => {
+    shards.forEach((shard) => {
+      const pulse = Math.sin(time * 5) * 0.3 + 0.7;
+      const rotation = time * 2;
+      
+      ctx.save();
+      ctx.translate(shard.x, shard.y);
+      ctx.rotate(rotation);
+      
+      // Draw diamond shape
+      ctx.fillStyle = `hsl(45, 100%, ${60 * pulse}%)`;
+      ctx.beginPath();
+      ctx.moveTo(0, -12 * pulse);
+      ctx.lineTo(8 * pulse, 0);
+      ctx.lineTo(0, 12 * pulse);
+      ctx.lineTo(-8 * pulse, 0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Glow effect
+      ctx.shadowColor = 'hsl(45, 100%, 60%)';
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      
+      ctx.restore();
+    });
+  };
+
+  // Draw exit portal
+  const drawExitPortal = (ctx: CanvasRenderingContext2D, exit: Vector2, time: number) => {
+    const pulse = Math.sin(time * 3) * 0.2 + 0.8;
+    const available = currentRoom.shards.length === 0;
+    
+    ctx.save();
+    ctx.translate(exit.x, exit.y);
+    
+    if (available) {
+      // Active portal
+      ctx.fillStyle = `hsl(180, 100%, ${45 * pulse}%)`;
+      ctx.shadowColor = 'hsl(180, 100%, 45%)';
+      ctx.shadowBlur = 20;
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, 25 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner circle
+      ctx.fillStyle = `hsl(180, 100%, ${70 * pulse}%)`;
+      ctx.beginPath();
+      ctx.arc(0, 0, 15 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Inactive portal
+      ctx.strokeStyle = 'hsl(0, 0%, 50%)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  };
 
   // Setup event listeners and game loop
   useEffect(() => {

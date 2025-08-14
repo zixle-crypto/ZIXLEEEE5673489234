@@ -22,6 +22,7 @@ export enum TileType {
   // Static tiles
   EMPTY = 'empty',
   SOLID = 'solid',
+  SPIKE = 'spike',
   
   // Ambiguous tiles (have two states)
   SPIKE_STAIR = 'spike_stair',      // Spikes ⇄ Stairs

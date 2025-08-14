@@ -18,14 +18,14 @@ export const PerceptionShift = () => {
   }, [initGame, isPlaying]);
 
   return (
-    <div className="min-h-screen bg-game-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-game-bg flex items-center justify-center p-4 font-mono">
       <div className="relative">
         {/* Game Title */}
         <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-perception mb-2 animate-perception-pulse">
+          <h1 className="text-4xl font-black text-perception mb-2 animate-perception-pulse font-orbitron tracking-wider">
             PERCEPTION SHIFT
           </h1>
-          <p className="text-game-text-dim text-sm">
+          <p className="text-game-text-dim text-sm font-mono">
             Reality changes with your attention • Weekly Seed Challenge
           </p>
         </div>
@@ -37,8 +37,11 @@ export const PerceptionShift = () => {
         </div>
 
         {/* Instructions */}
-        <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto">
+        <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto font-mono">
           <p>Move with WASD or arrow keys • Aim cursor to shift reality • Collect shards for points</p>
+          <p className="mt-2 text-perception text-xs">
+            💡 Tiles change state based on your attention - use cursor position and movement direction
+          </p>
         </div>
       </div>
     </div>

@@ -4,8 +4,10 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GameState, Player, GameRoom, Vector2, SaveData, GameStats } from '@/lib/gameTypes';
+import { GameState, Player, GameRoom, Vector2, SaveData, GameStats, AmbiguousTile, TileType } from '@/lib/gameTypes';
 import { getWeeklySeed } from '@/lib/rng';
+import { generateRoom } from '@/lib/levels';
+import { shouldTileBeAttended, TileHysteresis, AttentionData } from '@/lib/perception';
 
 const GAME_CONFIG = {
   PLAYER_SPEED: 5,
@@ -27,10 +29,15 @@ interface GameStore extends GameState {
   pauseGame: () => void;
   resumeGame: () => void;
   restartGame: () => void;
+  updateTiles: () => void;
+  nextRoom: () => void;
   
   // Save data
   saveData: SaveData;
   updateSaveData: (stats: GameStats) => void;
+  
+  // Tile system
+  hysteresis: TileHysteresis;
 }
 
 const createInitialPlayer = (): Player => ({
@@ -44,19 +51,10 @@ const createInitialPlayer = (): Player => ({
   alive: true,
 });
 
-const createInitialRoom = (): GameRoom => ({
-  id: 1,
-  width: GAME_CONFIG.ROOM_WIDTH,
-  height: GAME_CONFIG.ROOM_HEIGHT,
-  tiles: [],
-  shards: [
-    { x: 200, y: 300 },
-    { x: 400, y: 200 },
-    { x: 600, y: 350 }
-  ],
-  spawn: { x: 100, y: 400 },
-  exit: { x: 700, y: 400 }
-});
+const createInitialRoom = (): GameRoom => {
+  const weeklySeed = getWeeklySeed();
+  return generateRoom(1, weeklySeed);
+};
 
 const createInitialSaveData = (): SaveData => ({
   bestScore: 0,
@@ -89,6 +87,7 @@ export const useGameStore = create<GameStore>()(
       
       weeklySeed: getWeeklySeed(),
       saveData: createInitialSaveData(),
+      hysteresis: new TileHysteresis(),
 
       // Actions
       initGame: () => {
@@ -211,6 +210,54 @@ export const useGameStore = create<GameStore>()(
 
       restartGame: () => {
         get().initGame();
+      },
+
+      updateTiles: () => {
+        const state = get();
+        if (!state.isPlaying || state.isPaused || state.isGameOver) return;
+
+        const now = Date.now();
+        const room = { ...state.currentRoom };
+        const dwellTime = now - state.dwellStartTime;
+
+        const attentionData: AttentionData = {
+          cursorX: state.cursor.x,
+          cursorY: state.cursor.y,
+          playerX: state.player.x + state.player.width / 2,
+          playerY: state.player.y + state.player.height / 2,
+          playerVelX: state.player.velX,
+          playerVelY: state.player.velY,
+          dwellTime,
+        };
+
+        // Update tile states based on attention
+        room.tiles = room.tiles.map(tile => {
+          const tilePos = { x: tile.x, y: tile.y, width: tile.width, height: tile.height };
+          const shouldBeAttended = shouldTileBeAttended(attentionData, tilePos);
+
+          // Check hysteresis to prevent flickering
+          if (tile.isAttended !== shouldBeAttended && state.hysteresis.canChangeState(tile.id, now)) {
+            state.hysteresis.recordStateChange(tile.id, now);
+            return { ...tile, isAttended: shouldBeAttended, animating: true, lastStateChange: now };
+          }
+
+          return tile;
+        });
+
+        set({ currentRoom: room });
+      },
+
+      nextRoom: () => {
+        const state = get();
+        const nextRoomId = state.currentRoom.id + 1;
+        const newRoom = generateRoom(nextRoomId, state.weeklySeed);
+        
+        set({
+          currentRoom: newRoom,
+          roomsCleared: state.roomsCleared + 1,
+          score: state.score + 250, // Room completion bonus
+          player: { ...createInitialPlayer(), x: newRoom.spawn.x, y: newRoom.spawn.y },
+        });
       },
 
       updateSaveData: (stats: GameStats) => {

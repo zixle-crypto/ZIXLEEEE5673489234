@@ -27,21 +27,21 @@ export const GameHUD = () => {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  return (
-    <div className="absolute inset-0 pointer-events-none">
-      {/* Top HUD Bar */}
-      <div className="flex justify-between items-start p-4">
-        {/* Left: Timer & Score */}
-        <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
-          <div className="flex flex-col gap-1">
-            <div className="text-perception text-sm font-mono">
-              {formatTime(gameTime)}
-            </div>
-            <div className="text-game-text text-lg font-bold">
-              {score.toLocaleString()}
+    return (
+      <div className="absolute inset-0 pointer-events-none font-mono">
+        {/* Top HUD Bar */}
+        <div className="flex justify-between items-start p-4">
+          {/* Left: Timer & Score */}
+          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+            <div className="flex flex-col gap-1">
+              <div className="text-perception text-sm font-mono">
+                {formatTime(gameTime)}
+              </div>
+              <div className="text-game-text text-lg font-bold">
+                {score.toLocaleString()}
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Right: Room Count & Weekly Seed */}
         <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm text-right">
@@ -99,8 +99,8 @@ export const GameHUD = () => {
       {/* Game Over Overlay */}
       {isGameOver && (
         <div className="absolute inset-0 bg-game-bg/90 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-hud-bg border border-hud-border rounded-lg p-8 text-center max-w-md">
-            <h2 className="text-3xl font-bold text-game-danger mb-4">PERCEPTION LOST</h2>
+          <div className="bg-hud-bg border border-hud-border rounded-lg p-8 text-center max-w-md font-mono">
+            <h2 className="text-3xl font-black text-game-danger mb-4 font-orbitron">PERCEPTION LOST</h2>
             
             <div className="space-y-2 mb-6">
               <div className="flex justify-between text-game-text">
