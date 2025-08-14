@@ -365,16 +365,8 @@ export const CompleteGameCanvas = () => {
       }
     };
 
-    // Game loop with performance optimization
+    // Game loop - remove problematic sync logic
     const gameLoop = () => {
-      // Only sync when there's a significant position change (respawn/restart)
-      if (Math.abs(playerRef.current.x - player.x) > 100 || Math.abs(playerRef.current.y - player.y) > 100) {
-        console.log('🔄 Syncing player position from store');
-        playerRef.current = { ...player };
-        currentRoomRef.current = { ...currentRoom };
-        roomNumberRef.current = roomsCleared + 1;
-      }
-
       updateGame();
       render();
       animationRef.current = requestAnimationFrame(gameLoop);
@@ -392,6 +384,19 @@ export const CompleteGameCanvas = () => {
       }
     };
   }, [handleKeyDown, handleKeyUp, handleMouseMove]); // Remove store dependencies to prevent re-initialization
+
+  // Separate useEffect to handle respawn/restart events
+  useEffect(() => {
+    if (isGameOver || !isPlaying) return;
+    
+    // Only sync when player position is at spawn (indicates restart/respawn)
+    if (player.x === currentRoom.spawn.x && player.y === currentRoom.spawn.y) {
+      console.log('🔄 Syncing after restart/respawn');
+      playerRef.current = { ...player };
+      currentRoomRef.current = { ...currentRoom };
+      roomNumberRef.current = roomsCleared + 1;
+    }
+  }, [player.x, player.y, currentRoom, roomsCleared, isPlaying, isGameOver]);
 
   return (
     <div className="w-full h-full flex items-center justify-center">
