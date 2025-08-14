@@ -270,7 +270,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'perception-shift-save',
-      partialize: (state) => ({ score: state.score }),
+      partialize: (state) => ({ 
+        score: state.score,
+        weeklySeed: state.weeklySeed
+      }),
     }
   )
 );
