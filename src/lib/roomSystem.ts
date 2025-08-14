@@ -71,19 +71,20 @@ export const createRoom = (roomId: number): Room => {
 
 // Spike-focused rooms
 const createSpikeRoom = (id: number, difficulty: number): Room => {
-  const spikeCount = 2 + difficulty;
-  const platformCount = 3 + Math.floor(difficulty / 2);
+  const spikeCount = Math.min(3, 2 + Math.floor(difficulty / 2));
   
-  const platforms = Array.from({ length: platformCount }, (_, i) => ({
-    x: i * (700 / (platformCount - 1)),
-    y: 520 - (i % 2) * (30 + difficulty * 10),
-    width: 120 - difficulty * 5,
-    height: 20
-  }));
+  // Ensure platforms are reachable with proper spacing
+  const platforms = [
+    { x: 0, y: 520, width: 120, height: 20 }, // Start platform
+    { x: 200, y: 420, width: 120, height: 20 }, // Jump platform
+    { x: 400, y: 450, width: 120, height: 20 }, // Middle platform
+    { x: 600, y: 420, width: 120, height: 20 }, // End platform
+    { x: 680, y: 520, width: 120, height: 20 }  // Exit platform
+  ];
   
   const tiles = Array.from({ length: spikeCount }, (_, i) => ({
-    x: 150 + i * (500 / spikeCount),
-    y: 450 - (i % 2) * 50,
+    x: 250 + i * 150,
+    y: 380,
     width: 32,
     height: 32,
     type: 'danger_spike' as const,
@@ -95,10 +96,11 @@ const createSpikeRoom = (id: number, difficulty: number): Room => {
     id,
     platforms,
     tiles,
-    shards: Array.from({ length: 2 + Math.floor(difficulty / 3) }, (_, i) => ({
-      x: 100 + i * 300,
-      y: 400 - i * 20
-    })),
+    shards: [
+      { x: 260, y: 380 },
+      { x: 460, y: 410 },
+      { x: 660, y: 380 }
+    ].slice(0, 2 + Math.floor(difficulty / 3)),
     spawn: { x: 50, y: 480 },
     exit: { x: 720, y: 480 },
     exitActive: false
@@ -107,22 +109,21 @@ const createSpikeRoom = (id: number, difficulty: number): Room => {
 
 // Bridge-focused rooms
 const createBridgeRoom = (id: number, difficulty: number): Room => {
-  const gapWidth = 200 + difficulty * 50;
-  const bridgeSegments = Math.ceil(gapWidth / 32);
+  const bridgeSegments = Math.min(8, 4 + difficulty);
   
   const platforms = [
     { x: 0, y: 520, width: 150, height: 20 },
     { x: 650, y: 520, width: 150, height: 20 },
   ];
   
-  // Add floating platforms for higher difficulties
-  if (difficulty > 2) {
-    platforms.push({ x: 300, y: 400 - difficulty * 20, width: 100, height: 20 });
+  // Add helper platforms for higher difficulties
+  if (difficulty > 3) {
+    platforms.push({ x: 300, y: 450, width: 100, height: 20 });
   }
   
   const tiles = Array.from({ length: bridgeSegments }, (_, i) => ({
     x: 150 + i * 32,
-    y: 520,
+    y: 500,
     width: 32,
     height: 20,
     type: 'bridge' as const,
@@ -136,7 +137,7 @@ const createBridgeRoom = (id: number, difficulty: number): Room => {
     tiles,
     shards: [
       { x: 75, y: 480 },
-      { x: 150 + (bridgeSegments * 16), y: 480 }, // Middle of bridge
+      { x: 150 + (bridgeSegments * 16), y: 460 }, // Above bridge middle
       { x: 725, y: 480 },
     ],
     spawn: { x: 50, y: 480 },
@@ -149,21 +150,21 @@ const createBridgeRoom = (id: number, difficulty: number): Room => {
 const createMixedRoom = (id: number, difficulty: number): Room => {
   const platforms = [
     { x: 0, y: 520, width: 120, height: 20 },
-    { x: 200, y: 450 - difficulty * 10, width: 120, height: 20 },
-    { x: 400, y: 380 - difficulty * 15, width: 120, height: 20 },
-    { x: 600, y: 450 - difficulty * 5, width: 120, height: 20 },
+    { x: 180, y: 450, width: 120, height: 20 },
+    { x: 360, y: 400, width: 120, height: 20 },
+    { x: 540, y: 450, width: 120, height: 20 },
     { x: 680, y: 520, width: 120, height: 20 },
   ];
   
-  const tileCount = 3 + difficulty;
+  const tileCount = Math.min(4, 2 + Math.floor(difficulty / 2));
   const tiles = Array.from({ length: tileCount }, (_, i) => {
-    const isReverse = difficulty > 3 && i % 3 === 0; // Some tiles are reverse logic
+    const isReverse = difficulty > 5 && i % 2 === 0; // Some tiles are reverse logic
     return {
-      x: 180 + i * 130,
-      y: 400 - (i % 2) * 50,
+      x: 220 + i * 120,
+      y: 410 - (i % 2) * 30,
       width: 32,
       height: 32,
-      type: Math.random() > 0.5 ? 'danger_spike' : 'safe_platform' as any,
+      type: i % 2 === 0 ? 'danger_spike' : 'safe_platform' as any,
       isAttended: false,
       safeWhenAttended: !isReverse
     };
@@ -173,10 +174,12 @@ const createMixedRoom = (id: number, difficulty: number): Room => {
     id,
     platforms,
     tiles,
-    shards: Array.from({ length: 3 + Math.floor(difficulty / 2) }, (_, i) => ({
-      x: 100 + i * 150,
-      y: 400 - i * 30
-    })),
+    shards: [
+      { x: 120, y: 480 },
+      { x: 240, y: 410 },
+      { x: 420, y: 360 },
+      { x: 600, y: 410 }
+    ].slice(0, 2 + Math.floor(difficulty / 3)),
     spawn: { x: 50, y: 480 },
     exit: { x: 720, y: 480 },
     exitActive: false
@@ -185,56 +188,57 @@ const createMixedRoom = (id: number, difficulty: number): Room => {
 
 // Vertical climbing rooms
 const createVerticalRoom = (id: number, difficulty: number): Room => {
-  const levelCount = 4 + difficulty;
-  const platforms = Array.from({ length: levelCount }, (_, i) => ({
-    x: (i % 2) * 400 + 200,
-    y: 520 - i * (400 / levelCount),
-    width: 150 - difficulty * 5,
-    height: 20
-  }));
+  const platforms = [
+    { x: 200, y: 520, width: 150, height: 20 }, // Start
+    { x: 450, y: 450, width: 150, height: 20 }, // Level 1
+    { x: 200, y: 380, width: 150, height: 20 }, // Level 2
+    { x: 450, y: 310, width: 150, height: 20 }, // Level 3
+    { x: 200, y: 240, width: 150, height: 20 }, // Level 4
+    { x: 450, y: 170, width: 150, height: 20 }, // Top
+  ];
   
-  const tiles = Array.from({ length: levelCount - 1 }, (_, i) => ({
-    x: ((i + 1) % 2) * 400 + 250,
-    y: 480 - i * (400 / levelCount),
-    width: 32,
-    height: 32,
-    type: 'danger_spike' as const,
-    isAttended: false,
-    safeWhenAttended: true
-  }));
+  const tiles = [
+    { x: 350, y: 410, width: 32, height: 32, type: 'danger_spike' as const, isAttended: false, safeWhenAttended: true },
+    { x: 350, y: 340, width: 32, height: 32, type: 'danger_spike' as const, isAttended: false, safeWhenAttended: true },
+    { x: 350, y: 270, width: 32, height: 32, type: 'danger_spike' as const, isAttended: false, safeWhenAttended: true },
+  ];
   
   return {
     id,
     platforms,
     tiles,
-    shards: Array.from({ length: Math.min(4, 2 + difficulty) }, (_, i) => ({
-      x: (i % 2) * 400 + 275,
-      y: 450 - i * 100
-    })),
+    shards: [
+      { x: 275, y: 480 },
+      { x: 525, y: 410 },
+      { x: 275, y: 340 },
+      { x: 525, y: 130 }
+    ].slice(0, 2 + Math.floor(difficulty / 2)),
     spawn: { x: 250, y: 480 },
-    exit: { x: 275, y: 80 },
+    exit: { x: 525, y: 130 },
     exitActive: false
   };
 };
 
 // Maze navigation rooms
 const createMazeRoom = (id: number, difficulty: number): Room => {
-  const wallCount = 8 + difficulty * 2;
   const platforms = [
     { x: 0, y: 520, width: 100, height: 20 },
+    { x: 200, y: 450, width: 100, height: 20 },
+    { x: 400, y: 380, width: 100, height: 20 },
+    { x: 500, y: 310, width: 100, height: 20 },
+    { x: 300, y: 240, width: 100, height: 20 },
+    { x: 100, y: 170, width: 100, height: 20 },
+    { x: 600, y: 140, width: 100, height: 20 },
     { x: 700, y: 120, width: 100, height: 20 },
   ];
   
-  // Create maze walls as dangerous tiles
-  const tiles = Array.from({ length: wallCount }, (_, i) => ({
-    x: 120 + (i % 6) * 100,
-    y: 200 + Math.floor(i / 6) * 80,
-    width: 60,
-    height: 60,
-    type: 'safe_platform' as const,
-    isAttended: false,
-    safeWhenAttended: false // Reverse logic - become dangerous when looked at
-  }));
+  // Create maze tiles with moderate challenge
+  const tiles = [
+    { x: 150, y: 410, width: 32, height: 32, type: 'safe_platform' as const, isAttended: false, safeWhenAttended: false },
+    { x: 350, y: 340, width: 32, height: 32, type: 'danger_spike' as const, isAttended: false, safeWhenAttended: true },
+    { x: 450, y: 270, width: 32, height: 32, type: 'safe_platform' as const, isAttended: false, safeWhenAttended: false },
+    { x: 250, y: 200, width: 32, height: 32, type: 'danger_spike' as const, isAttended: false, safeWhenAttended: true },
+  ];
   
   return {
     id,
@@ -242,7 +246,7 @@ const createMazeRoom = (id: number, difficulty: number): Room => {
     tiles,
     shards: [
       { x: 50, y: 480 },
-      { x: 400, y: 300 },
+      { x: 450, y: 340 },
       { x: 750, y: 80 },
     ],
     spawn: { x: 50, y: 480 },

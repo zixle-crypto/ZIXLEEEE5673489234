@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { createRoom, type Room } from '@/lib/roomSystem';
 
 interface Player {
   x: number;
@@ -21,11 +22,8 @@ interface Shard {
   y: number;
 }
 
-interface GameRoom {
-  id: number;
-  shards: Shard[];
-  spawn: { x: number; y: number };
-  exit: { x: number; y: number };
+interface GameRoom extends Room {
+  exitActive: boolean;
 }
 
 interface GameState {
@@ -58,6 +56,7 @@ interface GameStore extends GameState {
   pauseGame: () => void;
   resumeGame: () => void;
   restartGame: () => void;
+  nextRoom: () => void;
 }
 
 const GAME_CONFIG = {
@@ -78,16 +77,13 @@ const createInitialPlayer = (): Player => ({
   alive: true,
 });
 
-const createInitialRoom = (): GameRoom => ({
-  id: 1,
-  shards: [
-    { x: 200, y: 300 },
-    { x: 400, y: 200 },
-    { x: 600, y: 350 }
-  ],
-  spawn: { x: 100, y: 400 },
-  exit: { x: 700, y: 400 }
-});
+const createInitialRoom = (roomNumber: number = 1): GameRoom => {
+  const room = createRoom(roomNumber);
+  return {
+    ...room,
+    exitActive: false
+  };
+};
 
 export const useGameStore = create<GameStore>()(
   persist(
@@ -111,7 +107,11 @@ export const useGameStore = create<GameStore>()(
       initGame: () => {
         console.log('🎮 Initializing game state...');
         const newPlayer = createInitialPlayer();
-        const newRoom = createInitialRoom();
+        const newRoom = createInitialRoom(1);
+        
+        // Position player at spawn point
+        newPlayer.x = newRoom.spawn.x;
+        newPlayer.y = newRoom.spawn.y;
         
         console.log('🎯 Player created at:', newPlayer.x, newPlayer.y);
         console.log('🔸 Room created with', newRoom.shards.length, 'shards');
@@ -195,6 +195,11 @@ export const useGameStore = create<GameStore>()(
         const room = { ...state.currentRoom };
         room.shards = room.shards.filter((_, i) => i !== index);
         
+        // If all shards collected, activate exit
+        if (room.shards.length === 0) {
+          room.exitActive = true;
+        }
+        
         set({
           currentRoom: room,
           score: state.score + 100,
@@ -218,6 +223,26 @@ export const useGameStore = create<GameStore>()(
 
       restartGame: () => {
         get().initGame();
+      },
+
+      nextRoom: () => {
+        const state = get();
+        const nextRoomNumber = state.roomsCleared + 2; // +1 for current room, +1 for next
+        const newRoom = createInitialRoom(Math.min(nextRoomNumber, 100));
+        const newPlayer = createInitialPlayer();
+        
+        // Position player at spawn point
+        newPlayer.x = newRoom.spawn.x;
+        newPlayer.y = newRoom.spawn.y;
+        
+        set({
+          player: newPlayer,
+          currentRoom: newRoom,
+          roomsCleared: state.roomsCleared + 1,
+          score: state.score + 500, // Bonus for completing room
+        });
+        
+        console.log(`🚪 Advanced to room ${nextRoomNumber}`);
       },
     }),
     {
