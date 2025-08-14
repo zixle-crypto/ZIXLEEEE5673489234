@@ -2,25 +2,42 @@
  * Clean main game component
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CompleteGameCanvas } from './CompleteGameCanvas';
 import { GameHUD } from './CleanGameHUD';
+import { SplashScreen } from './SplashScreen';
 import { useGameStore } from '@/stores/gameStore';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying } = useGameStore();
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [showGame, setShowGame] = useState(false);
 
   useEffect(() => {
-    // Initialize game once and ensure it's playing
-    console.log('Initializing game...');
-    initGame();
-    
-    // Force a second initialization after a brief delay to ensure state is set
-    setTimeout(() => {
-      console.log('Ensuring game is initialized and playing...');
+    if (showGame) {
+      // Initialize game once and ensure it's playing
+      console.log('Initializing game...');
       initGame();
-    }, 100);
-  }, [initGame]);
+      
+      // Force a second initialization after a brief delay to ensure state is set
+      setTimeout(() => {
+        console.log('Ensuring game is initialized and playing...');
+        initGame();
+      }, 100);
+    }
+  }, [initGame, showGame]);
+
+  const handleUserComplete = (username: string) => {
+    setCurrentUser(username);
+    setShowGame(true);
+    
+    // Store current user for future sessions
+    localStorage.setItem('zixle-current-user', username);
+  };
+
+  if (!showGame) {
+    return <SplashScreen onComplete={handleUserComplete} />;
+  }
 
   return (
     <div className="min-h-screen bg-game-bg flex flex-col items-center justify-center p-4 font-mono">
