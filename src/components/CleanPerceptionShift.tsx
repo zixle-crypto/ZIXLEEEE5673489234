@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { WorkingGameCanvas } from './WorkingGameCanvas';
+import { CompleteGameCanvas } from './CompleteGameCanvas';
 import { GameHUD } from './CleanGameHUD';
 import { useGameStore } from '@/stores/gameStore';
 
@@ -37,7 +37,7 @@ export const CleanPerceptionShift = () => {
       {/* Game Container */}
       <div className="relative bg-game-surface border border-game-border rounded-lg p-4 shadow-2xl">
         <div style={{ width: '800px', height: '600px', position: 'relative' }}>
-          <WorkingGameCanvas />
+          <CompleteGameCanvas />
           <GameHUD />
         </div>
       </div>
