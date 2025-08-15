@@ -53,25 +53,22 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
   // Actions
   setUser: (user) => {
-    console.log('Setting user in store:', user);
-    console.log('User email:', user?.email);
-    console.log('User ID:', user?.id);
+    console.log('🔄 Setting user in store:', user?.email);
     
-    // Update state first
-    set({ user, error: null });
+    // Update state immediately
+    set({ user, error: null, loading: !!user });
     
-    // Then load data with proper error handling
+    // Load data if user exists
     if (user?.id) {
-      console.log('User exists with ID, loading data...');
-      // Use setTimeout to prevent any potential issues
-      setTimeout(() => {
-        get().loadUserData().catch(error => {
-          console.error('Error in loadUserData:', error);
-          set({ error: error.message });
-        });
-      }, 100);
+      console.log('✅ User has ID, starting auto data load...');
+      
+      // Start loading immediately
+      get().loadUserData().catch(error => {
+        console.error('❌ Auto data load failed:', error);
+        set({ error: error.message, loading: false });
+      });
     } else {
-      console.log('No user or no user ID, clearing data...');
+      console.log('❌ No user, clearing data...');
       set({ gameData: null, inventory: [], loading: false });
     }
   },
@@ -79,12 +76,12 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
   loadUserData: async () => {
     const { user } = get();
     if (!user?.id) {
-      console.log('No user ID found, cannot load data');
+      console.log('❌ No user ID, cannot load data');
       set({ loading: false });
       return;
     }
 
-    console.log('Loading user data for:', user.email, 'ID:', user.id);
+    console.log('🔍 Loading data for:', user.email, 'ID:', user.id);
     set({ loading: true, error: null });
 
     try {
@@ -136,7 +133,10 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       if (inventoryError) throw inventoryError;
 
       set({ inventory: inventory || [] });
-      console.log('User data loaded successfully. Game data:', gameData, 'Inventory items:', inventory?.length || 0);
+      console.log('✅ Data loaded successfully!', { 
+        shards: gameData?.total_shards || 0, 
+        cubes: inventory?.length || 0 
+      });
 
     } catch (error: any) {
       console.error('Failed to load user data:', error);

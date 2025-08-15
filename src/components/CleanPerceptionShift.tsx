@@ -11,8 +11,6 @@ import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
-import { DebugPanel } from './DebugPanel';
-import { EmergencySync } from './EmergencySync';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,46 +29,88 @@ export const CleanPerceptionShift = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change:', event, session);
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Use setTimeout to avoid deadlock with Supabase
-        setTimeout(() => {
-          if (session?.user) {
-            console.log('Auth change - setting user data for:', session.user.email);
-            setUserData(session.user);
-          } else {
-            console.log('Auth change - no valid user');
-            setUserData(null);
-          }
-        }, 0);
+        // Auto-sync user data when authenticated
+        if (session?.user && event === 'SIGNED_IN') {
+          console.log('User signed in, auto-syncing data...');
+          
+          // Give the user data store the authenticated user
+          setUserData(session.user);
+          
+          // Also force a direct data load to ensure it works
+          setTimeout(async () => {
+            try {
+              const userId = session.user.id;
+              
+              // Load game data
+              const { data: gameData } = await supabase
+                .from('user_game_data')
+                .select('*')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+              // Load inventory
+              const { data: inventoryData } = await supabase
+                .from('user_inventory')
+                .select('*')
+                .eq('user_id', userId);
+
+              // Update store directly if data exists
+              if (gameData || inventoryData) {
+                const { gameData: currentGameData, inventory: currentInventory } = useUserDataStore.getState();
+                
+                // Only update if store is empty
+                if (!currentGameData && !currentInventory.length) {
+                  useUserDataStore.setState({
+                    gameData: gameData,
+                    inventory: inventoryData || [],
+                    loading: false,
+                    error: null
+                  });
+                  console.log('Auto-synced data:', { shards: gameData?.total_shards, cubes: inventoryData?.length });
+                }
+              }
+            } catch (error) {
+              console.error('Auto-sync error:', error);
+            }
+          }, 500);
+        } else if (!session?.user) {
+          console.log('User signed out, clearing data...');
+          setUserData(null);
+        }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session);
+      if (!mounted) return;
+      
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Use setTimeout to avoid issues
-      setTimeout(() => {
-        if (session?.user) {
-          console.log('Initial - setting user data for:', session.user.email);
-          setUserData(session.user);
-        } else {
-          console.log('Initial - no valid session user found');
-          setUserData(null);
-        }
-        setLoading(false);
-      }, 0);
+      if (session?.user) {
+        console.log('Existing session found, auto-syncing data...');
+        setUserData(session.user);
+      }
+      
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [setUserData]);
 
   useEffect(() => {
@@ -216,12 +256,6 @@ export const CleanPerceptionShift = () => {
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
-      
-      {/* Emergency Sync Button */}
-      <EmergencySync />
-      
-      {/* Debug Panel - Remove this after fixing */}
-      <DebugPanel />
     </div>
   );
 };
