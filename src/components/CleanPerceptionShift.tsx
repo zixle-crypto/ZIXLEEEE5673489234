@@ -31,61 +31,79 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     let mounted = true;
 
+    console.log('🚀 Setting up authentication...');
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state change:', event, session?.user?.email);
+        console.log('🔔 Auth state change:', event, 'User:', session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         // Auto-sync user data when authenticated
-        if (session?.user && event === 'SIGNED_IN') {
-          console.log('User signed in, auto-syncing data...');
+        if (session?.user) {
+          console.log('✅ User authenticated:', session.user.email);
+          console.log('📋 User ID:', session.user.id);
           
           // Give the user data store the authenticated user
           setUserData(session.user);
           
-          // Also force a direct data load to ensure it works
+          // Additional safety check - try direct database query
           setTimeout(async () => {
             try {
+              console.log('🔍 Safety check - querying database directly...');
               const userId = session.user.id;
               
-              // Load game data
-              const { data: gameData } = await supabase
+              // Test if we can query the database at all
+              const { data: testData, error: testError } = await supabase
+                .from('user_game_data')
+                .select('count')
+                .eq('user_id', userId);
+              
+              console.log('🧪 Database test result:', testData, testError);
+              
+              if (testError) {
+                console.error('❌ Database access failed:', testError);
+                console.log('🔧 Possible RLS issue or user not in database');
+              }
+              
+              // Load actual data
+              const { data: gameData, error: gameError } = await supabase
                 .from('user_game_data')
                 .select('*')
                 .eq('user_id', userId)
                 .maybeSingle();
 
-              // Load inventory
-              const { data: inventoryData } = await supabase
+              const { data: inventoryData, error: inventoryError } = await supabase
                 .from('user_inventory')
                 .select('*')
                 .eq('user_id', userId);
 
-              // Update store directly if data exists
+              console.log('📊 Game data:', gameData, gameError);
+              console.log('📦 Inventory data:', inventoryData?.length || 0, 'items', inventoryError);
+
+              // Force update store if we got data
               if (gameData || inventoryData) {
-                const { gameData: currentGameData, inventory: currentInventory } = useUserDataStore.getState();
-                
-                // Only update if store is empty
-                if (!currentGameData && !currentInventory.length) {
-                  useUserDataStore.setState({
-                    gameData: gameData,
-                    inventory: inventoryData || [],
-                    loading: false,
-                    error: null
-                  });
-                  console.log('Auto-synced data:', { shards: gameData?.total_shards, cubes: inventoryData?.length });
-                }
+                console.log('🔄 Force updating store with data...');
+                useUserDataStore.setState({
+                  user: session.user,
+                  gameData: gameData,
+                  inventory: inventoryData || [],
+                  loading: false,
+                  error: null
+                });
+                console.log('✅ Store updated!');
+              } else {
+                console.log('❌ No data found in database for user');
               }
             } catch (error) {
-              console.error('Auto-sync error:', error);
+              console.error('💥 Safety check failed:', error);
             }
-          }, 500);
-        } else if (!session?.user) {
-          console.log('User signed out, clearing data...');
+          }, 1000);
+        } else {
+          console.log('❌ No user in session');
           setUserData(null);
         }
       }
@@ -95,13 +113,15 @@ export const CleanPerceptionShift = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
-      console.log('Initial session check:', session?.user?.email);
+      console.log('🔍 Initial session check:', session?.user?.email || 'No user');
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        console.log('Existing session found, auto-syncing data...');
+        console.log('👤 Existing session found for:', session.user.email);
         setUserData(session.user);
+      } else {
+        console.log('🚫 No existing session found');
       }
       
       setLoading(false);
