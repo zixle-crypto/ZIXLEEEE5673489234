@@ -166,6 +166,25 @@ export const CleanPerceptionShift = () => {
     return <SplashScreen onComplete={handleUserComplete} user={user} />;
   }
 
+  // Show auth screen if not authenticated (and not on splash screen)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-game-bg flex items-center justify-center p-4">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-perception mb-4">PERCEPTION SHIFT</h1>
+          <p className="text-game-text mb-6">You need to sign in to access your cubes and shards</p>
+          <button 
+            onClick={() => setCurrentScreen('splash')}
+            className="bg-perception text-white px-6 py-3 rounded font-bold hover:bg-perception/90"
+          >
+            SIGN IN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show main menu only if authenticated
   if (currentScreen === 'menu') {
     return (
       <MainMenu
