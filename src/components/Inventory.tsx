@@ -343,11 +343,28 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
         })}
       </div>
       
-      {filteredItems.length === 0 && (
+      {/* Loading state */}
+      {loading && (
+        <div className="text-center text-game-text py-8">
+          <div className="animate-spin w-8 h-8 border-2 border-perception border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading inventory...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="text-center text-red-400 py-8">
+          <p>Error loading inventory: {error}</p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && ownedCubes.length === 0 && (
         <div className="text-center text-game-text-dim py-8">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No cubes in this category</p>
+          <p>No cubes in your inventory</p>
           <p className="text-sm">Visit the shop to purchase cubes!</p>
+          <p className="text-xs mt-2">Debug: userInventory length = {userInventory.length}</p>
         </div>
       )}
     </div>

@@ -53,10 +53,13 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
   // Actions
   setUser: (user) => {
+    console.log('Setting user in store:', user?.email);
     set({ user });
     if (user) {
+      console.log('User exists, loading data...');
       get().loadUserData();
     } else {
+      console.log('No user, clearing data...');
       set({ gameData: null, inventory: [] });
     }
   },
