@@ -79,11 +79,12 @@ const handler = async (req: Request): Promise<Response> => {
           
           // Generate a sign-in token for the existing verified user
           const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
+            type: 'recovery',
             email: email.toLowerCase(),
           });
 
           if (!tokenError && tokenData) {
+            console.log('Found existing user, token data:', JSON.stringify(tokenData, null, 2));
             return new Response(
               JSON.stringify({ 
                 success: true, 
@@ -141,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         // Generate a sign-in token for the existing user
         const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
+          type: 'recovery',
           email: email.toLowerCase(),
         });
 
@@ -149,6 +150,8 @@ const handler = async (req: Request): Promise<Response> => {
           console.error('Error generating sign-in token:', tokenError);
           throw new Error('Failed to generate sign-in token');
         }
+
+        console.log('Token data generated:', JSON.stringify(tokenData, null, 2));
 
         return new Response(
           JSON.stringify({ 
