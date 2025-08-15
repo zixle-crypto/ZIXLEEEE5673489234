@@ -56,24 +56,35 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     console.log('Setting user in store:', user);
     console.log('User email:', user?.email);
     console.log('User ID:', user?.id);
-    set({ user });
-    if (user && user.id) {
+    
+    // Update state first
+    set({ user, error: null });
+    
+    // Then load data with proper error handling
+    if (user?.id) {
       console.log('User exists with ID, loading data...');
-      get().loadUserData();
+      // Use setTimeout to prevent any potential issues
+      setTimeout(() => {
+        get().loadUserData().catch(error => {
+          console.error('Error in loadUserData:', error);
+          set({ error: error.message });
+        });
+      }, 100);
     } else {
       console.log('No user or no user ID, clearing data...');
-      set({ gameData: null, inventory: [] });
+      set({ gameData: null, inventory: [], loading: false });
     }
   },
 
   loadUserData: async () => {
     const { user } = get();
-    if (!user) {
-      console.log('No user found, cannot load data');
+    if (!user?.id) {
+      console.log('No user ID found, cannot load data');
+      set({ loading: false });
       return;
     }
 
-    console.log('Loading user data for:', user.email);
+    console.log('Loading user data for:', user.email, 'ID:', user.id);
     set({ loading: true, error: null });
 
     try {

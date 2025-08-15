@@ -11,6 +11,7 @@ import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
+import { DebugPanel } from './DebugPanel';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,38 +30,43 @@ export const CleanPerceptionShift = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state change:', event, session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Use setTimeout to avoid deadlock with Supabase
+        setTimeout(() => {
+          if (session?.user) {
+            console.log('Auth change - setting user data for:', session.user.email);
+            setUserData(session.user);
+          } else {
+            console.log('Auth change - no valid user');
+            setUserData(null);
+          }
+        }, 0);
+      }
+    );
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
-      console.log('Session user:', session?.user);
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Only set user data if we have a valid user
-      if (session?.user) {
-        console.log('Setting user data for:', session.user.email);
-        setUserData(session.user);
-      } else {
-        console.log('No valid session user found');
-        setUserData(null);
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', _event, session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Only set user data if we have a valid user
-      if (session?.user) {
-        console.log('Auth change - setting user data for:', session.user.email);
-        setUserData(session.user);
-      } else {
-        console.log('Auth change - no valid user');
-        setUserData(null);
-      }
+      // Use setTimeout to avoid issues
+      setTimeout(() => {
+        if (session?.user) {
+          console.log('Initial - setting user data for:', session.user.email);
+          setUserData(session.user);
+        } else {
+          console.log('Initial - no valid session user found');
+          setUserData(null);
+        }
+        setLoading(false);
+      }, 0);
     });
 
     return () => subscription.unsubscribe();
@@ -209,6 +215,9 @@ export const CleanPerceptionShift = () => {
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
+      
+      {/* Debug Panel - Remove this after fixing */}
+      <DebugPanel />
     </div>
   );
 };
