@@ -77,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     try {
       const emailResponse = await resend.emails.send({
-        from: "Perception Shift <noreply@yourdomain.com>", // Replace with your verified domain
+        from: "Perception Shift <noreply@yourdomain.com>", // Replace with your actual verified domain
         to: [email],
         subject: "Your Perception Shift Verification Code",
       html: `
