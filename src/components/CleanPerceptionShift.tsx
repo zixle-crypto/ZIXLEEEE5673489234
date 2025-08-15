@@ -50,10 +50,12 @@ export const CleanPerceptionShift = () => {
           // Give the user data store the authenticated user
           setUserData(session.user);
           
-          // Auto-navigate to menu after successful auth
-          if (currentScreen === 'splash') {
-            setCurrentScreen('menu');
-          }
+          // Auto-navigate to menu after successful auth, with a small delay
+          setTimeout(() => {
+            if (currentScreen === 'splash') {
+              setCurrentScreen('menu');
+            }
+          }, 200);
           
           // Additional safety check - try direct database query
           setTimeout(async () => {

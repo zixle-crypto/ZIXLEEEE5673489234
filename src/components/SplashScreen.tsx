@@ -136,6 +136,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
           if (sessionError) {
             console.error('Session error:', sessionError);
+            throw sessionError;
           }
         }
 
@@ -145,7 +146,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
             ? `Account created successfully for ${email}` 
             : `Successfully verified and logged in as ${email}`,
         });
-        onComplete(email);
+        
+        // Wait a bit for auth state to update, then complete
+        setTimeout(() => {
+          onComplete(email);
+        }, 100);
       } else {
         throw new Error(data.error || "Invalid verification code");
       }
