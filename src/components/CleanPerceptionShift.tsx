@@ -31,6 +31,7 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setUserData(session?.user ?? null);
@@ -39,6 +40,7 @@ export const CleanPerceptionShift = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session);
       setSession(session);
       setUser(session?.user ?? null);
       setUserData(session?.user ?? null);

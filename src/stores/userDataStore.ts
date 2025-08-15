@@ -63,17 +63,24 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
   loadUserData: async () => {
     const { user } = get();
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot load data');
+      return;
+    }
 
+    console.log('Loading user data for:', user.email);
     set({ loading: true, error: null });
 
     try {
       // Load game data
+      console.log('Fetching game data for user:', user.id);
       const { data: gameData, error: gameError } = await supabase
         .from('user_game_data')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      console.log('Game data result:', gameData, 'Error:', gameError);
 
       if (gameError) throw gameError;
 
@@ -101,15 +108,19 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       }
 
       // Load inventory
+      console.log('Fetching inventory for user:', user.id);
       const { data: inventory, error: inventoryError } = await supabase
         .from('user_inventory')
         .select('*')
         .eq('user_id', user.id)
         .order('purchased_at', { ascending: false });
 
+      console.log('Inventory result:', inventory, 'Error:', inventoryError);
+
       if (inventoryError) throw inventoryError;
 
       set({ inventory: inventory || [] });
+      console.log('User data loaded successfully. Game data:', gameData, 'Inventory items:', inventory?.length || 0);
 
     } catch (error: any) {
       console.error('Failed to load user data:', error);

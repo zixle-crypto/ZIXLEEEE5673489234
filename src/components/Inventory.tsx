@@ -20,7 +20,9 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
     consumePowerUp 
   } = useShopStore();
   
-  const { inventory: userInventory, gameData } = useUserDataStore();
+  const { inventory: userInventory, gameData, loading, error } = useUserDataStore();
+  
+  console.log('Inventory component - userInventory:', userInventory, 'gameData:', gameData, 'loading:', loading, 'error:', error);
   
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'equipped' | string>('all');
 
