@@ -146,8 +146,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
         toast({
           title: data.user_created ? "Welcome to Zixle Studios!" : "Welcome back!",
           description: data.user_created 
-            ? `Account created successfully for ${email}` 
-            : `Successfully verified and logged in as ${email}`,
+            ? `Account created! Your progress will be saved automatically.` 
+            : `Welcome back! Your saved progress has been loaded.`,
         });
         
         console.log('About to call onComplete...');
@@ -211,7 +211,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
               ENTER EMAIL
             </Button>
             <p className="text-center text-xs text-game-text-dim font-mono">
-              We'll send you a 6-digit code to verify your email
+              We'll send you a 6-digit code to verify your email.<br/>
+              <span className="text-perception">Your game progress will be saved automatically!</span>
             </p>
           </CardContent>
         </Card>

@@ -52,6 +52,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <span className="text-game-text-dim">Shards</span>
           </div>
         </div>
+        
+        {/* How to Play - First time user guidance */}
+        <div className="mt-6 bg-game-surface/50 border border-game-border rounded-lg p-4 max-w-2xl mx-auto">
+          <h3 className="text-perception font-bold mb-2">🎮 HOW TO PLAY</h3>
+          <div className="text-game-text-dim text-sm space-y-1">
+            <p>• Move with <span className="text-perception">WASD</span> or <span className="text-perception">Arrow Keys</span></p>
+            <p>• Jump with <span className="text-perception">W</span>, <span className="text-perception">Up Arrow</span>, or <span className="text-perception">Space</span></p>
+            <p>• Collect <span className="text-perception">⬟ Golden Shards</span> to complete rooms and earn currency</p>
+            <p>• Buy power-up cubes in the <span className="text-perception">SHOP</span> and equip them in your <span className="text-perception">INVENTORY</span></p>
+            <p>• Compete on the global <span className="text-perception">LEADERBOARD</span> with other players!</p>
+            <p className="text-perception text-xs mt-2">💾 Your progress is automatically saved to your account</p>
+          </div>
+        </div>
       </div>
 
       {/* Menu Buttons */}
