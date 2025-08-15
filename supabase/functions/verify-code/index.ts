@@ -47,14 +47,64 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('code', code)
       .eq('verified', false)
       .gte('expires_at', new Date().toISOString())
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
 
-    if (verificationError || !verificationData) {
-      console.log('Verification failed:', verificationError);
+    console.log('Verification lookup result:', { verificationData, verificationError });
+
+    if (verificationError) {
+      console.log('Database error during verification:', verificationError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Invalid or expired verification code" 
+          error: "Database error during verification" 
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    if (!verificationData) {
+      console.log('No valid verification code found - code may be invalid, expired, or already used');
+      
+      // Check if the user already exists and is verified
+      const { data: existingUser, error: userCheckError } = await supabase.auth.admin.listUsers();
+      
+      if (!userCheckError && existingUser?.users) {
+        const userExists = existingUser.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        
+        if (userExists) {
+          console.log('User already exists and is verified - generating sign-in token');
+          
+          // Generate a sign-in token for the existing verified user
+          const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: email.toLowerCase(),
+          });
+
+          if (!tokenError && tokenData) {
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                message: "Code verified successfully",
+                user_exists: true,
+                access_token: tokenData.properties?.access_token,
+                refresh_token: tokenData.properties?.refresh_token
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              }
+            );
+          }
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Invalid or expired verification code. Please request a new one." 
         }),
         {
           status: 400,
