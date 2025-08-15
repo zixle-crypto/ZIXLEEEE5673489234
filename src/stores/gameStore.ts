@@ -40,6 +40,13 @@ interface GameState {
   startTime: number;
   roomStartTime: number;
   
+  // Power-ups and effects
+  activePowerUps: {
+    shardMultiplier: number;
+    speedBoost: number;
+    protection: number;
+  };
+  
   // Game status
   isPlaying: boolean;
   isPaused: boolean;
@@ -115,6 +122,11 @@ export const useGameStore = create<GameStore>()(
       weeklySeed: 20241,
       currentRank: null,
       lastRoomReward: 0,
+      activePowerUps: {
+        shardMultiplier: 1,
+        speedBoost: 1,
+        protection: 0,
+      },
 
       // Actions
       initGame: () => {
@@ -144,6 +156,11 @@ export const useGameStore = create<GameStore>()(
           weeklySeed: 20241,
           currentRank: null,
           lastRoomReward: 0,
+          activePowerUps: {
+            shardMultiplier: 1,
+            speedBoost: 1,
+            protection: 0,
+          },
         });
         
         console.log('✅ Game initialized - isPlaying: true');
@@ -189,13 +206,14 @@ export const useGameStore = create<GameStore>()(
 
         const player = { ...state.player };
         
-        // Horizontal movement
+        // Horizontal movement (with speed boost)
         player.velX = 0;
+        const currentSpeed = GAME_CONFIG.PLAYER_SPEED * state.activePowerUps.speedBoost;
         if (keys.has('KeyA') || keys.has('ArrowLeft')) {
-          player.velX = -GAME_CONFIG.PLAYER_SPEED;
+          player.velX = -currentSpeed;
         }
         if (keys.has('KeyD') || keys.has('ArrowRight')) {
-          player.velX = GAME_CONFIG.PLAYER_SPEED;
+          player.velX = currentSpeed;
         }
         
         // Jumping
@@ -217,13 +235,31 @@ export const useGameStore = create<GameStore>()(
           room.exitActive = true;
         }
         
+        const shardsEarned = Math.floor(100 * state.activePowerUps.shardMultiplier);
+        
         set({
           currentRoom: room,
           score: state.score + 100,
+          totalShards: state.totalShards + shardsEarned,
         });
       },
 
       playerDie: () => {
+        const state = get();
+        
+        // Check if player has protection
+        if (state.activePowerUps.protection > 0) {
+          // Consume protection instead of dying
+          set({
+            activePowerUps: {
+              ...state.activePowerUps,
+              protection: state.activePowerUps.protection - 1
+            }
+          });
+          console.log('🛡️ Protection saved you! Remaining:', state.activePowerUps.protection - 1);
+          return;
+        }
+        
         set({
           isGameOver: true,
           isPlaying: false,
@@ -264,6 +300,11 @@ export const useGameStore = create<GameStore>()(
           weeklySeed: 20241,
           currentRank: null,
           lastRoomReward: 0,
+          activePowerUps: {
+            shardMultiplier: 1,
+            speedBoost: 1,
+            protection: 0,
+          },
         });
         
         console.log('✅ Game restarted successfully');

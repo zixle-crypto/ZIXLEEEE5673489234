@@ -1,11 +1,12 @@
 /**
- * Shop component - Grow a Garden style shop system
+ * Shop component - Cube-based shop system with restocking
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Sparkles, Zap, Shield, Star } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles, Zap, Shield, Star, Box, Gem } from 'lucide-react';
+import { useShopStore, type CubeItem } from '@/stores/shopStore';
 
 interface ShopProps {
   onBack: () => void;
@@ -13,83 +14,87 @@ interface ShopProps {
   onPurchase: (itemId: string, cost: number) => void;
 }
 
-interface ShopItem {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  icon: React.ComponentType<any>;
-  type: 'cosmetic' | 'powerup' | 'upgrade';
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-}
-
-const shopItems: ShopItem[] = [
-  {
-    id: 'golden_trail',
-    name: 'Golden Trail',
-    description: 'Leave a shimmering golden trail behind your character',
-    cost: 150,
-    icon: Sparkles,
-    type: 'cosmetic',
-    rarity: 'rare'
-  },
-  {
-    id: 'speed_boost',
-    name: 'Speed Boost',
-    description: 'Increases movement speed by 25% for 3 rooms',
-    cost: 75,
-    icon: Zap,
-    type: 'powerup',
-    rarity: 'common'
-  },
-  {
-    id: 'shield_bubble',
-    name: 'Shield Bubble',
-    description: 'Protects from one death in the next room',
-    cost: 100,
-    icon: Shield,
-    type: 'powerup',
-    rarity: 'common'
-  },
-  {
-    id: 'rainbow_aura',
-    name: 'Rainbow Aura',
-    description: 'Surround your character with a prismatic aura',
-    cost: 300,
-    icon: Star,
-    type: 'cosmetic',
-    rarity: 'epic'
-  }
-];
-
 export const Shop: React.FC<ShopProps> = ({
   onBack,
   totalShards,
   onPurchase
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetic' | 'powerup' | 'upgrade'>('all');
+  const { 
+    inventory, 
+    generateInventory, 
+    purchaseItem, 
+    getTimeUntilRestock,
+    applyPowerUp 
+  } = useShopStore();
+  
+  const [selectedCategory, setSelectedCategory] = useState<'all' | CubeItem['rarity']>('all');
+  const [timeUntilRestock, setTimeUntilRestock] = useState(0);
 
-  const filteredItems = shopItems.filter(item => 
-    selectedCategory === 'all' || item.type === selectedCategory
+  // Initialize shop and start restock timer
+  useEffect(() => {
+    if (inventory.length === 0) {
+      generateInventory();
+    }
+    
+    const timer = setInterval(() => {
+      const timeLeft = getTimeUntilRestock();
+      setTimeUntilRestock(timeLeft);
+      
+      if (timeLeft <= 0) {
+        generateInventory();
+      }
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [inventory.length, generateInventory, getTimeUntilRestock]);
+
+  const filteredItems = inventory.filter(item => 
+    selectedCategory === 'all' || item.rarity === selectedCategory
   );
 
-  const getRarityColor = (rarity: string) => {
+  const getRarityColor = (rarity: CubeItem['rarity']) => {
     switch (rarity) {
       case 'common': return 'text-gray-400 border-gray-400';
       case 'rare': return 'text-blue-400 border-blue-400';
       case 'epic': return 'text-purple-400 border-purple-400';
       case 'legendary': return 'text-yellow-400 border-yellow-400';
+      case 'prismatic': return 'text-pink-400 border-pink-400';
       default: return 'text-gray-400 border-gray-400';
     }
   };
 
-  const getRarityBg = (rarity: string) => {
+  const getRarityBg = (rarity: CubeItem['rarity']) => {
     switch (rarity) {
       case 'common': return 'bg-gray-400/10';
       case 'rare': return 'bg-blue-400/10';
       case 'epic': return 'bg-purple-400/10';
       case 'legendary': return 'bg-yellow-400/10';
+      case 'prismatic': return 'bg-pink-400/10';
       default: return 'bg-gray-400/10';
+    }
+  };
+
+  const getCubeIcon = (rarity: CubeItem['rarity']) => {
+    switch (rarity) {
+      case 'common': return Box;
+      case 'rare': return Shield;
+      case 'epic': return Zap;
+      case 'legendary': return Star;
+      case 'prismatic': return Gem;
+      default: return Box;
+    }
+  };
+
+  const formatTime = (milliseconds: number) => {
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const handlePurchase = (item: CubeItem) => {
+    if (totalShards >= item.cost && purchaseItem(item.id)) {
+      onPurchase(item.id, item.cost);
+      applyPowerUp(item.id);
     }
   };
 
@@ -108,8 +113,14 @@ export const Shop: React.FC<ShopProps> = ({
         
         <div className="text-center">
           <h1 className="text-4xl font-black text-perception font-orbitron tracking-wider">
-            SHOP
+            CUBE SHOP
           </h1>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <Clock className="w-4 h-4 text-perception" />
+            <span className="text-sm text-game-text">
+              Restocks in: {formatTime(timeUntilRestock)}
+            </span>
+          </div>
         </div>
         
         <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
@@ -121,12 +132,14 @@ export const Shop: React.FC<ShopProps> = ({
       </div>
 
       {/* Category Filter */}
-      <div className="flex gap-2 mb-6 justify-center">
+      <div className="flex gap-2 mb-6 justify-center flex-wrap">
         {[
           { key: 'all', label: 'ALL' },
-          { key: 'cosmetic', label: 'COSMETICS' },
-          { key: 'powerup', label: 'POWER-UPS' },
-          { key: 'upgrade', label: 'UPGRADES' }
+          { key: 'common', label: 'COMMON' },
+          { key: 'rare', label: 'RARE' },
+          { key: 'epic', label: 'EPIC' },
+          { key: 'legendary', label: 'LEGENDARY' },
+          { key: 'prismatic', label: 'PRISMATIC' }
         ].map(category => (
           <Button
             key={category.key}
@@ -137,6 +150,7 @@ export const Shop: React.FC<ShopProps> = ({
                 ? 'bg-perception text-white'
                 : 'border-game-border text-game-text hover:bg-game-surface'
             }
+            size="sm"
           >
             {category.label}
           </Button>
@@ -145,15 +159,20 @@ export const Shop: React.FC<ShopProps> = ({
 
       {/* Shop Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
-        {filteredItems.map(item => {
-          const canAfford = totalShards >= item.cost;
-          const Icon = item.icon;
+        {filteredItems.map((item, index) => {
+          const canAfford = totalShards >= item.cost && item.inStock && item.quantity > 0;
+          const Icon = getCubeIcon(item.rarity);
           
           return (
             <Card
-              key={item.id}
-              className={`bg-game-surface border-2 ${getRarityColor(item.rarity)} transition-all duration-200 hover:scale-105 ${getRarityBg(item.rarity)}`}
+              key={`${item.id}-${index}`}
+              className={`bg-game-surface border-2 ${getRarityColor(item.rarity)} transition-all duration-200 hover:scale-105 ${getRarityBg(item.rarity)} relative`}
             >
+              {/* Stock indicator */}
+              <div className="absolute top-2 right-2 bg-game-bg rounded-full px-2 py-1 text-xs">
+                <span className="text-game-text">×{item.quantity}</span>
+              </div>
+              
               <CardHeader className="text-center pb-2">
                 <div className="mx-auto mb-2 p-3 rounded-full bg-game-bg border border-current">
                   <Icon className="w-8 h-8" />
@@ -167,9 +186,19 @@ export const Shop: React.FC<ShopProps> = ({
               </CardHeader>
               
               <CardContent className="pt-0">
-                <p className="text-game-text-dim text-sm mb-4 min-h-[40px]">
+                <p className="text-game-text-dim text-sm mb-4 min-h-[60px]">
                   {item.description}
                 </p>
+                
+                {/* Effect display */}
+                <div className="mb-3 p-2 bg-game-bg rounded border border-game-border">
+                  <p className="text-xs text-perception">
+                    {item.effect.type === 'shard_multiplier' && `${item.effect.value}x Shards (${item.effect.duration} rooms)`}
+                    {item.effect.type === 'speed_boost' && `${Math.round((item.effect.value - 1) * 100)}% Speed (${item.effect.duration} rooms)`}
+                    {item.effect.type === 'protection' && `Protection (${item.effect.duration} rooms)`}
+                    {item.effect.type === 'cosmetic' && 'Cosmetic Effect'}
+                  </p>
+                </div>
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -178,7 +207,7 @@ export const Shop: React.FC<ShopProps> = ({
                   </div>
                   
                   <Button
-                    onClick={() => canAfford && onPurchase(item.id, item.cost)}
+                    onClick={() => canAfford && handlePurchase(item)}
                     disabled={!canAfford}
                     className={
                       canAfford
@@ -187,7 +216,8 @@ export const Shop: React.FC<ShopProps> = ({
                     }
                     size="sm"
                   >
-                    {canAfford ? 'BUY' : 'NOT ENOUGH'}
+                    {!item.inStock || item.quantity <= 0 ? 'OUT OF STOCK' :
+                     !canAfford ? 'NOT ENOUGH' : 'BUY'}
                   </Button>
                 </div>
               </CardContent>
@@ -195,14 +225,25 @@ export const Shop: React.FC<ShopProps> = ({
           );
         })}
       </div>
+      
+      {filteredItems.length === 0 && (
+        <div className="text-center text-game-text-dim py-8">
+          <Box className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>No cubes available in this category</p>
+          <p className="text-sm">Check back after restock!</p>
+        </div>
+      )}
 
       {/* Shop Info */}
       <div className="mt-8 text-center text-game-text-dim text-sm max-w-2xl mx-auto">
         <p className="mb-2">
-          💡 Cosmetic items are permanent once purchased
+          🎲 Cubes provide temporary gameplay effects when purchased
+        </p>
+        <p className="mb-2">
+          ⏰ Shop restocks every 4 minutes with random cubes
         </p>
         <p>
-          ⚡ Power-ups are consumed when used and provide temporary effects
+          ✨ Rarity affects spawn chance: Common (60%) → Rare (25%) → Epic (10%) → Legendary (4%) → Prismatic (1%)
         </p>
       </div>
     </div>

@@ -24,40 +24,31 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Get the user from the JWT token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
     const { roomNumber, currentScore, shardsCollected, completionTime }: CompleteRoomRequest = await req.json();
 
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user info from the JWT - using anon key first
-    const anonSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
-    const jwt = authHeader.split(' ')[1];
-    const { data: { user }, error: userError } = await anonSupabase.auth.getUser(jwt);
-
-    if (userError || !user) {
-      console.error('Error getting user:', userError);
-      return new Response(
-        JSON.stringify({ error: "Invalid user token" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // For demo purposes, use guest user data
+    let userEmail = 'guest@demo.com';
+    let userId = 'demo-user-id';
+    
+    // Try to get authenticated user, but don't require it
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const anonSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+      const jwt = authHeader.split(' ')[1];
+      const { data: { user }, error: userError } = await anonSupabase.auth.getUser(jwt);
+      
+      if (user && !userError) {
+        userEmail = user.email || userEmail;
+        userId = user.id;
+      } else {
+        console.log('Using guest user for demo');
+      }
     }
 
-    console.log(`Room completion for user ${user.email}: Room ${roomNumber}, Score: ${currentScore}, Shards: ${shardsCollected}, Time: ${completionTime}s`);
+    console.log(`Room completion for user ${userEmail}: Room ${roomNumber}, Score: ${currentScore}, Shards: ${shardsCollected}, Time: ${completionTime}s`);
 
     // Calculate shard reward based on room difficulty and completion time
     const baseShardReward = 10; // Base shards per room
@@ -77,8 +68,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Update leaderboard using the database function with service role key
     const { data: leaderboardResult, error: leaderboardError } = await supabase
       .rpc('update_leaderboard', {
-        p_user_id: user.id,
-        p_email: user.email || 'Unknown',
+        p_user_id: userId,
+        p_email: userEmail,
         p_shards_earned: shardsEarned,
         p_current_score: currentScore
       });
