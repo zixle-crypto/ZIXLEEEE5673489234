@@ -12,6 +12,7 @@ import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
 import { DebugPanel } from './DebugPanel';
+import { EmergencySync } from './EmergencySync';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,6 +216,9 @@ export const CleanPerceptionShift = () => {
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
+      
+      {/* Emergency Sync Button */}
+      <EmergencySync />
       
       {/* Debug Panel - Remove this after fixing */}
       <DebugPanel />

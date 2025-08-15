@@ -23,28 +23,56 @@ export const DebugPanel: React.FC = () => {
 
   const forceLoadData = async () => {
     console.log('Force loading data directly...');
-    if (!user?.id) {
-      console.log('No user ID');
+    
+    // Get current session first
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Current session:', session);
+    
+    if (!session?.user?.id) {
+      console.log('No authenticated user found');
       return;
     }
 
+    const userId = session.user.id;
+    console.log('Force loading for user ID:', userId);
+
     try {
-      // Load game data
+      // Load game data directly
+      console.log('Fetching game data...');
       const { data: gameData, error: gameError } = await supabase
         .from('user_game_data')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
-      console.log('Direct game data:', gameData, 'Error:', gameError);
+      console.log('Direct game data result:', gameData, 'Error:', gameError);
 
-      // Load inventory
+      // Load inventory directly
+      console.log('Fetching inventory...');
       const { data: inventory, error: inventoryError } = await supabase
         .from('user_inventory')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
-      console.log('Direct inventory:', inventory, 'Error:', inventoryError);
+      console.log('Direct inventory result:', inventory, 'Error:', inventoryError);
+      console.log('Inventory count:', inventory?.length || 0);
+
+      // If data exists, force update the store
+      if (gameData || inventory) {
+        const { setUser: setUserData } = useUserDataStore.getState();
+        
+        // Force update store state
+        useUserDataStore.setState({
+          user: session.user,
+          gameData: gameData,
+          inventory: inventory || [],
+          loading: false,
+          error: null
+        });
+        
+        console.log('Store updated directly!');
+      }
+      
     } catch (error) {
       console.error('Direct load error:', error);
     }
@@ -70,7 +98,7 @@ export const DebugPanel: React.FC = () => {
           Check Auth
         </Button>
         <Button onClick={forceLoadData} size="sm" variant="outline">
-          Force Load
+          Force Sync
         </Button>
       </div>
     </div>
