@@ -71,20 +71,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send email with verification code
-    // Note: In test mode, Resend only allows sending to the verified domain owner
-    // For demo purposes, we'll still store the code and allow verification
-    let emailSent = false;
+    const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <noreply@zixlestudios.com>';
+    console.log(`Sending verification email from: ${fromEmail} to: ${email}`);
     
-    try {
-      const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <onboarding@resend.dev>';
-      console.log(`Sending verification email from: ${fromEmail} to: ${email}`);
-      console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
-      console.log('EMAIL_FROM value:', Deno.env.get('EMAIL_FROM'));
-      
-      const emailResponse = await resend.emails.send({
-        from: fromEmail,
-        to: [email],
-        subject: "Your Perception Shift Verification Code",
+    const emailResponse = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
+      subject: "Your Perception Shift Verification Code",
       html: `
         <div style="font-family: 'Courier New', monospace; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: #ffffff; padding: 40px; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 40px;">
@@ -129,31 +122,18 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-      console.log("Full email response:", JSON.stringify(emailResponse, null, 2));
+    console.log("Email sent successfully:", emailResponse);
 
-      if (emailResponse.error) {
-        console.error('Email sending error details:', JSON.stringify(emailResponse.error, null, 2));
-        emailSent = false;
-      } else if (emailResponse.data) {
-        console.log('Email sent successfully! ID:', emailResponse.data.id);
-        emailSent = true;
-      } else {
-        console.error('Unknown email response structure:', emailResponse);
-        emailSent = false;
-      }
-    } catch (emailError: any) {
-      console.error('Email sending failed with exception:', emailError);
-      console.error('Error details:', JSON.stringify(emailError, null, 2));
-      emailSent = false;
+    if (emailResponse.error) {
+      console.error('Email sending error:', emailResponse.error);
+      throw new Error(`Failed to send email: ${emailResponse.error.message}`);
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: emailSent ? "Verification code sent successfully" : `Demo mode: Your verification code is ${code} (email service limited)`,
-        expiresAt: expiresAt.toISOString(),
-        demoMode: !emailSent,
-        demoCode: !emailSent ? code : undefined
+        message: "Verification code sent successfully",
+        expiresAt: expiresAt.toISOString()
       }),
       {
         status: 200,
