@@ -127,8 +127,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       }
 
       if (data.success) {
+        console.log('Verification successful, data:', data);
+        
         // If we got tokens, set the session
         if (data.access_token && data.refresh_token) {
+          console.log('Setting session with tokens...');
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: data.access_token,
             refresh_token: data.refresh_token
@@ -138,6 +141,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
             console.error('Session error:', sessionError);
             throw sessionError;
           }
+          console.log('Session set successfully');
         }
 
         toast({
@@ -147,10 +151,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
             : `Successfully verified and logged in as ${email}`,
         });
         
-        // Wait a bit for auth state to update, then complete
-        setTimeout(() => {
-          onComplete(email);
-        }, 100);
+        console.log('About to call onComplete...');
+        // Complete immediately - the auth state change will handle navigation
+        onComplete(email);
       } else {
         throw new Error(data.error || "Invalid verification code");
       }

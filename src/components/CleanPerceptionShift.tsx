@@ -147,10 +147,9 @@ export const CleanPerceptionShift = () => {
   }, [initGame, currentScreen]);
 
   const handleUserComplete = (userEmail: string) => {
-    // Only change screen if we have a user, otherwise stay on splash until auth completes
-    if (user) {
-      setCurrentScreen('menu');
-    }
+    console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);
+    // Force navigation to menu immediately
+    setCurrentScreen('menu');
   };
 
   const handleShopPurchase = async (itemId: string, cost: number) => {
