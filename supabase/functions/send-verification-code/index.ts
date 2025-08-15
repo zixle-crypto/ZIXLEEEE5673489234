@@ -78,6 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <noreply@zixlestudios.com>';
       console.log(`Sending verification email from: ${fromEmail} to: ${email}`);
+      console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
       
       const emailResponse = await resend.emails.send({
         from: fromEmail,
@@ -127,17 +128,21 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-      console.log("Email sent successfully:", emailResponse);
+      console.log("Full email response:", JSON.stringify(emailResponse, null, 2));
 
       if (emailResponse.error) {
-        console.error('Email sending error:', emailResponse.error);
+        console.error('Email sending error details:', JSON.stringify(emailResponse.error, null, 2));
         emailSent = false;
-      } else {
+      } else if (emailResponse.data) {
+        console.log('Email sent successfully! ID:', emailResponse.data.id);
         emailSent = true;
+      } else {
+        console.error('Unknown email response structure:', emailResponse);
+        emailSent = false;
       }
     } catch (emailError: any) {
-      console.error('Email sending failed:', emailError);
-      // In demo mode, continue without email but inform user
+      console.error('Email sending failed with exception:', emailError);
+      console.error('Error details:', JSON.stringify(emailError, null, 2));
       emailSent = false;
     }
 
