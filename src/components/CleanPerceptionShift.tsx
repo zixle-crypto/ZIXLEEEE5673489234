@@ -21,7 +21,7 @@ import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
-  const { initGame, isPlaying, currentRank, lastRoomReward } = useGameStore();
+  const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData } = useGameStore();
   const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory } = useUserDataStore();
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
@@ -101,7 +101,10 @@ export const CleanPerceptionShift = () => {
                   loading: false,
                   error: null
                 });
-                console.log('✅ Store updated!');
+                
+                // Sync power-ups to game store
+                syncPowerUpsFromUserData();
+                console.log('✅ Store updated and power-ups synced!');
               } else {
                 console.log('❌ No data found in database for user');
               }

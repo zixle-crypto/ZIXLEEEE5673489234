@@ -40,7 +40,7 @@ interface GameState {
   startTime: number;
   roomStartTime: number;
   
-  // Power-ups and effects
+  // Power-ups and effects (synced with user data store)
   activePowerUps: {
     shardMultiplier: number;
     speedBoost: number;
@@ -73,6 +73,7 @@ interface GameStore extends GameState {
   restartGame: () => void;
   respawnInRoom: () => void;
   nextRoom: () => void;
+  syncPowerUpsFromUserData: () => void;
 }
 
 const GAME_CONFIG = {
@@ -400,6 +401,22 @@ export const useGameStore = create<GameStore>()(
         });
         
         console.log(`✅ Advanced to room ${nextRoomNumber}`);
+      },
+
+      syncPowerUpsFromUserData: () => {
+        // Import user data store here to avoid circular imports
+        const { gameData } = require('@/stores/userDataStore').useUserDataStore.getState();
+        
+        if (gameData) {
+          set({
+            activePowerUps: {
+              shardMultiplier: gameData.active_shard_multiplier || 1,
+              speedBoost: gameData.active_speed_boost || 1,
+              protection: gameData.active_protection || 0,
+            }
+          });
+          console.log('🔄 Synced power-ups from user data:', gameData);
+        }
       },
     }),
     {

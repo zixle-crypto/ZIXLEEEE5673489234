@@ -180,21 +180,55 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
     }
   };
 
-  const handleEquip = (item: typeof ownedCubes[0]) => {
-    applyPowerUp(item.id);
+  const handleEquip = async (item: typeof ownedCubes[0]) => {
+    try {
+      // Apply the power-up effect in shop store
+      applyPowerUp(item.id);
+      
+      // Update the user data in the database with the new power-up values
+      const { updatePowerUps } = useUserDataStore.getState();
+      
+      // Get the current active power-ups from shop store
+      const { activePowerUps } = useShopStore.getState();
+      
+      // Update database with new power-up values and duration
+      await updatePowerUps({
+        active_shard_multiplier: activePowerUps.shardMultiplier,
+        active_speed_boost: activePowerUps.speedBoost, 
+        active_protection: activePowerUps.protection,
+        shard_multiplier_rooms_left: item.effect.type === 'shard_multiplier' ? item.effect.duration || 0 : 0,
+        speed_boost_rooms_left: item.effect.type === 'speed_boost' ? item.effect.duration || 0 : 0,
+        protection_rooms_left: item.effect.type === 'protection' ? item.effect.duration || 0 : 0,
+      });
+      
+      console.log('✅ Equipped cube:', item.name, 'with effect:', item.effect);
+    } catch (error) {
+      console.error('❌ Error equipping cube:', error);
+    }
   };
 
-  const handleUnequip = (item: typeof ownedCubes[0]) => {
-    switch (item.effect.type) {
-      case 'shard_multiplier':
-        consumePowerUp('shardMultiplier');
-        break;
-      case 'speed_boost':
-        consumePowerUp('speedBoost');
-        break;
-      case 'protection':
-        consumePowerUp('protection');
-        break;
+  const handleUnequip = async (item: typeof ownedCubes[0]) => {
+    try {
+      // Remove the power-up effect
+      consumePowerUp(item.effect.type === 'shard_multiplier' ? 'shardMultiplier' : 
+                      item.effect.type === 'speed_boost' ? 'speedBoost' : 'protection');
+      
+      // Update the user data in the database
+      const { updatePowerUps } = useUserDataStore.getState();
+      const { activePowerUps } = useShopStore.getState();
+      
+      await updatePowerUps({
+        active_shard_multiplier: activePowerUps.shardMultiplier,
+        active_speed_boost: activePowerUps.speedBoost,
+        active_protection: activePowerUps.protection,
+        shard_multiplier_rooms_left: 0,
+        speed_boost_rooms_left: 0,
+        protection_rooms_left: 0,
+      });
+      
+      console.log('✅ Unequipped cube:', item.name);
+    } catch (error) {
+      console.error('❌ Error unequipping cube:', error);
     }
   };
 
