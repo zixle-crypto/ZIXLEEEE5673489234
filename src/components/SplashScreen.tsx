@@ -83,10 +83,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       }
 
       if (data.success) {
-        toast({
-          title: "Verification code sent!",
-          description: `We've sent a 6-digit code to ${email}. Please check your email.`,
-        });
+        // Handle demo mode for emails that can't be sent
+        if (data.demoMode && data.demoCode) {
+          toast({
+            title: "Demo Mode - Code Generated",
+            description: `Your verification code is: ${data.demoCode}\n(Email service limited in demo mode)`,
+          });
+        } else {
+          toast({
+            title: "Verification code sent!",
+            description: `We've sent a 6-digit code to ${email}. Please check your email.`,
+          });
+        }
         setExpiresAt(new Date(data.expiresAt));
         setCurrentScreen('verify-code');
         setResendCooldown(30); // 30 second cooldown
