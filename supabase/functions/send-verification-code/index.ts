@@ -76,8 +76,11 @@ const handler = async (req: Request): Promise<Response> => {
     let emailSent = false;
     
     try {
+      const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <noreply@zixlestudios.com>';
+      console.log(`Sending verification email from: ${fromEmail} to: ${email}`);
+      
       const emailResponse = await resend.emails.send({
-        from: "Perception Shift <noreply@yourdomain.com>", // Replace with your actual verified domain
+        from: fromEmail,
         to: [email],
         subject: "Your Perception Shift Verification Code",
       html: `
