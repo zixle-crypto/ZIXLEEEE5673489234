@@ -173,6 +173,78 @@ export type Database = {
         }
         Relationships: []
       }
+      user_game_data: {
+        Row: {
+          active_protection: number
+          active_shard_multiplier: number
+          active_speed_boost: number
+          created_at: string
+          id: string
+          protection_rooms_left: number
+          shard_multiplier_rooms_left: number
+          speed_boost_rooms_left: number
+          total_shards: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_protection?: number
+          active_shard_multiplier?: number
+          active_speed_boost?: number
+          created_at?: string
+          id?: string
+          protection_rooms_left?: number
+          shard_multiplier_rooms_left?: number
+          speed_boost_rooms_left?: number
+          total_shards?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_protection?: number
+          active_shard_multiplier?: number
+          active_speed_boost?: number
+          created_at?: string
+          id?: string
+          protection_rooms_left?: number
+          shard_multiplier_rooms_left?: number
+          speed_boost_rooms_left?: number
+          total_shards?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_inventory: {
+        Row: {
+          created_at: string
+          cube_id: string
+          id: string
+          purchased_at: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cube_id: string
+          id?: string
+          purchased_at?: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cube_id?: string
+          id?: string
+          purchased_at?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
