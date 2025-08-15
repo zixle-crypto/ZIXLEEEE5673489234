@@ -131,13 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (emailResponse.error) {
         console.error('Email sending error:', emailResponse.error);
-        // Don't throw error for Resend API limitations in test mode
-        if (emailResponse.error.error?.includes('only send testing emails to your own email')) {
-          console.log('Using demo mode - email service limited to verified domain');
-          emailSent = false;
-        } else {
-          throw new Error('Failed to send verification email');
-        }
+        emailSent = false;
       } else {
         emailSent = true;
       }
