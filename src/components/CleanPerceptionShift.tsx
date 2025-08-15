@@ -32,9 +32,18 @@ export const CleanPerceptionShift = () => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
+      console.log('Session user:', session?.user);
       setSession(session);
       setUser(session?.user ?? null);
-      setUserData(session?.user ?? null);
+      
+      // Only set user data if we have a valid user
+      if (session?.user) {
+        console.log('Setting user data for:', session.user.email);
+        setUserData(session.user);
+      } else {
+        console.log('No valid session user found');
+        setUserData(null);
+      }
       setLoading(false);
     });
 
@@ -43,7 +52,15 @@ export const CleanPerceptionShift = () => {
       console.log('Auth state changed:', _event, session);
       setSession(session);
       setUser(session?.user ?? null);
-      setUserData(session?.user ?? null);
+      
+      // Only set user data if we have a valid user
+      if (session?.user) {
+        console.log('Auth change - setting user data for:', session.user.email);
+        setUserData(session.user);
+      } else {
+        console.log('Auth change - no valid user');
+        setUserData(null);
+      }
     });
 
     return () => subscription.unsubscribe();
