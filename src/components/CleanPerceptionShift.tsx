@@ -10,13 +10,14 @@ import { SplashScreen } from './SplashScreen';
 import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
+import { Inventory } from './Inventory';
 import { useGameStore } from '@/stores/gameStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 
-type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop';
+type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, totalShards, currentRank, lastRoomReward } = useGameStore();
@@ -115,6 +116,7 @@ export const CleanPerceptionShift = () => {
         onPlay={() => setCurrentScreen('game')}
         onLeaderboard={() => setCurrentScreen('leaderboard')}
         onShop={() => setCurrentScreen('shop')}
+        onInventory={() => setCurrentScreen('inventory')}
         totalShards={totalShards}
       />
     );
@@ -138,6 +140,14 @@ export const CleanPerceptionShift = () => {
         onBack={() => setCurrentScreen('menu')}
         totalShards={totalShards}
         onPurchase={handleShopPurchase}
+      />
+    );
+  }
+
+  if (currentScreen === 'inventory') {
+    return (
+      <Inventory 
+        onBack={() => setCurrentScreen('menu')}
       />
     );
   }

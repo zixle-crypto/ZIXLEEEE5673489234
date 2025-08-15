@@ -205,6 +205,16 @@ export const useShopStore = create<ShopStore>()(
           nextRestockTime: now + RESTOCK_INTERVAL,
         });
         
+        // Show restock notification
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          if (Notification.permission === 'granted') {
+            new Notification('🛒 Shop Restocked!', {
+              body: 'New cubes are now available in the shop!',
+              icon: '/favicon.ico'
+            });
+          }
+        }
+        
         console.log('🛒 Shop restocked with', newInventory.length, 'unique items');
       },
 

@@ -4,12 +4,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Trophy, ShoppingBag } from 'lucide-react';
+import { Play, Trophy, ShoppingBag, Package } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MainMenuProps {
   onPlay: () => void;
   onLeaderboard: () => void;
   onShop: () => void;
+  onInventory: () => void;
   totalShards: number;
 }
 
@@ -17,8 +19,20 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onPlay,
   onLeaderboard,
   onShop,
+  onInventory,
   totalShards
 }) => {
+  
+  // Request notification permission on component mount
+  React.useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          toast.success('Notifications enabled! You\'ll be notified when the shop restocks.');
+        }
+      });
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg flex flex-col items-center justify-center p-4 font-mono">
       {/* Header */}
@@ -59,14 +73,25 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           LEADERBOARD
         </Button>
         
-        <Button
-          onClick={onShop}
-          variant="outline"
-          className="h-16 border-game-border text-game-text hover:bg-game-surface font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
-        >
-          <ShoppingBag className="w-6 h-6" />
-          SHOP
-        </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            onClick={onShop}
+            variant="outline"
+            className="h-16 border-game-border text-game-text hover:bg-game-surface font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
+          >
+            <ShoppingBag className="w-6 h-6" />
+            SHOP
+          </Button>
+          
+          <Button
+            onClick={onInventory}
+            variant="outline"
+            className="h-16 border-purple-400 text-purple-400 hover:bg-purple-400/10 font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
+          >
+            <Package className="w-6 h-6" />
+            INVENTORY
+          </Button>
+        </div>
       </div>
 
       {/* Footer */}

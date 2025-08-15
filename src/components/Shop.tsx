@@ -85,6 +85,23 @@ export const Shop: React.FC<ShopProps> = ({
     }
   };
 
+  const getCubeVisual = (rarity: CubeItem['rarity']) => {
+    switch (rarity) {
+      case 'common': 
+        return 'bg-gradient-to-br from-gray-300 to-gray-500 shadow-md';
+      case 'rare': 
+        return 'bg-gradient-to-br from-blue-300 to-blue-600 shadow-lg shadow-blue-500/25';
+      case 'epic': 
+        return 'bg-gradient-to-br from-purple-400 to-purple-700 shadow-xl shadow-purple-500/40 animate-pulse';
+      case 'legendary': 
+        return 'bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-2xl shadow-yellow-500/50 animate-pulse';
+      case 'prismatic': 
+        return 'bg-gradient-to-br from-pink-400 via-purple-500 to-cyan-400 shadow-2xl shadow-pink-500/60 animate-pulse';
+      default: 
+        return 'bg-gradient-to-br from-gray-300 to-gray-500 shadow-md';
+    }
+  };
+
   const formatTime = (milliseconds: number) => {
     const minutes = Math.floor(milliseconds / 60000);
     const seconds = Math.floor((milliseconds % 60000) / 1000);
@@ -174,8 +191,8 @@ export const Shop: React.FC<ShopProps> = ({
               </div>
               
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-2 p-3 rounded-full bg-game-bg border border-current">
-                  <Icon className="w-8 h-8" />
+                <div className={`mx-auto mb-2 p-3 rounded-lg border border-current ${getCubeVisual(item.rarity)}`}>
+                  <Icon className="w-8 h-8 text-white drop-shadow-lg" />
                 </div>
                 <CardTitle className={`text-lg font-mono ${getRarityColor(item.rarity).split(' ')[0]}`}>
                   {item.name}
