@@ -77,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     try {
       const emailResponse = await resend.emails.send({
-        from: "Zixle Studios <onboarding@resend.dev>",
+        from: "Perception Shift <noreply@yourdomain.com>", // Replace with your verified domain
         to: [email],
         subject: "Your Perception Shift Verification Code",
       html: `
