@@ -77,28 +77,20 @@ const handler = async (req: Request): Promise<Response> => {
         if (userExists) {
           console.log('User already exists and is verified - generating sign-in token');
           
-          // Generate a sign-in token for the existing verified user
-          const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-            type: 'recovery',
-            email: email.toLowerCase(),
-          });
-
-          if (!tokenError && tokenData) {
-            console.log('Found existing user, token data:', JSON.stringify(tokenData, null, 2));
-            return new Response(
-              JSON.stringify({ 
-                success: true, 
-                message: "Code verified successfully",
-                user_exists: true,
-                access_token: tokenData.properties?.access_token,
-                refresh_token: tokenData.properties?.refresh_token
-              }),
-              {
-                status: 200,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-              }
-            );
-          }
+          // For existing users, just return success - let the client handle sign in
+          console.log('User already exists and is verified - allowing verification');
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: "Code verified successfully",
+              user_exists: true
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
         }
       }
       
@@ -140,26 +132,14 @@ const handler = async (req: Request): Promise<Response> => {
       if (signUpError.message.includes('already been registered') || signUpError.code === 'email_exists') {
         console.log('User already exists, proceeding with sign-in');
         
-        // Generate a sign-in token for the existing user
-        const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-          type: 'recovery',
-          email: email.toLowerCase(),
-        });
-
-        if (tokenError) {
-          console.error('Error generating sign-in token:', tokenError);
-          throw new Error('Failed to generate sign-in token');
-        }
-
-        console.log('Token data generated:', JSON.stringify(tokenData, null, 2));
-
+        // For existing users, just return success
+        console.log('User already exists, verification successful');
+        
         return new Response(
           JSON.stringify({ 
             success: true, 
             message: "Code verified successfully",
-            user_exists: true,
-            access_token: tokenData.properties?.access_token,
-            refresh_token: tokenData.properties?.refresh_token
+            user_exists: true
           }),
           {
             status: 200,
@@ -180,35 +160,12 @@ const handler = async (req: Request): Promise<Response> => {
       .delete()
       .eq('email', email.toLowerCase());
 
-    // Generate access tokens for the new user
-    const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-      type: 'recovery',
-      email: email.toLowerCase(),
-    });
-
-    if (tokenError) {
-      console.error('Error generating tokens:', tokenError);
-      // User was created but token generation failed - they can try signing in
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Account created successfully. Please try signing in.",
-          user_created: true
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
+    // For new users, just return success - let the client handle sign in
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "Code verified and account created successfully",
-        user_created: true,
-        access_token: tokenData.properties?.access_token,
-        refresh_token: tokenData.properties?.refresh_token
+        user_created: true
       }),
       {
         status: 200,

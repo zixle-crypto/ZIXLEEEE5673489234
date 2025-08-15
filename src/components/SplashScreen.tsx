@@ -129,24 +129,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       if (data.success) {
         console.log('Verification successful, data:', data);
         
-        // If we got tokens, set the session
-        if (data.access_token && data.refresh_token) {
-          console.log('Setting session with tokens...');
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token
-          });
-
-          if (sessionError) {
-            console.error('Session error:', sessionError);
-            throw sessionError;
+        // Sign in with OTP for both existing and new users
+        console.log('Signing in user with OTP...');
+        const { error: signInError } = await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: {
+            shouldCreateUser: !data.user_exists
           }
-          console.log('Session set successfully');
-        } else {
-          // Force check session after successful verification
-          console.log('No tokens returned, checking current session...');
-          const { data: sessionData } = await supabase.auth.getSession();
-          console.log('Current session after verification:', sessionData);
+        });
+
+        if (signInError && !signInError.message.includes('rate_limit')) {
+          console.error('Sign in error:', signInError);
+          throw signInError;
         }
 
         toast({
