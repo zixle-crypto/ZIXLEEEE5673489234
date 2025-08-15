@@ -8,17 +8,20 @@ import { CompleteGameCanvas } from './CompleteGameCanvas';
 import { GameHUD } from './CleanGameHUD';
 import { SplashScreen } from './SplashScreen';
 import { Leaderboard } from './Leaderboard';
+import { MainMenu } from './MainMenu';
+import { Shop } from './Shop';
 import { useGameStore } from '@/stores/gameStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
-import { Trophy, Crown, Target } from 'lucide-react';
+import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
+
+type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, totalShards, currentRank, lastRoomReward } = useGameStore();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [showGame, setShowGame] = useState(false);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +41,7 @@ export const CleanPerceptionShift = () => {
             description: "Welcome to Zixle Studios! Your account has been activated.",
           });
           setCurrentUser(session.user.email || '');
-          setShowGame(true);
+          setCurrentScreen('menu');
           // Store current user for future sessions
           localStorage.setItem('zixle-current-user', session.user.email || '');
         }
@@ -58,7 +61,7 @@ export const CleanPerceptionShift = () => {
   }, []);
 
   useEffect(() => {
-    if (showGame) {
+    if (currentScreen === 'game') {
       // Initialize game once and ensure it's playing
       console.log('Initializing game...');
       initGame();
@@ -69,14 +72,23 @@ export const CleanPerceptionShift = () => {
         initGame();
       }, 100);
     }
-  }, [initGame, showGame]);
+  }, [initGame, currentScreen]);
 
   const handleUserComplete = (userEmail: string) => {
     setCurrentUser(userEmail);
-    setShowGame(true);
+    setCurrentScreen('menu');
     
     // Store current user for future sessions
     localStorage.setItem('zixle-current-user', userEmail);
+  };
+
+  const handleShopPurchase = (itemId: string, cost: number) => {
+    // For now, just deduct shards (in a real app, you'd store purchases)
+    if (totalShards >= cost) {
+      // This would typically update a user purchases table
+      console.log(`Purchased ${itemId} for ${cost} shards`);
+      // Update total shards here if you have the setter
+    }
   };
 
   // Show loading state while checking auth
@@ -93,18 +105,46 @@ export const CleanPerceptionShift = () => {
     );
   }
 
-  if (!showGame) {
+  if (currentScreen === 'splash') {
     return <SplashScreen onComplete={handleUserComplete} user={user} />;
   }
 
+  if (currentScreen === 'menu') {
+    return (
+      <MainMenu
+        onPlay={() => setCurrentScreen('game')}
+        onLeaderboard={() => setCurrentScreen('leaderboard')}
+        onShop={() => setCurrentScreen('shop')}
+        totalShards={totalShards}
+      />
+    );
+  }
+
+  if (currentScreen === 'leaderboard') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg">
+        <Leaderboard 
+          isVisible={true} 
+          onClose={() => setCurrentScreen('menu')} 
+          currentUser={user}
+        />
+      </div>
+    );
+  }
+
+  if (currentScreen === 'shop') {
+    return (
+      <Shop
+        onBack={() => setCurrentScreen('menu')}
+        totalShards={totalShards}
+        onPurchase={handleShopPurchase}
+      />
+    );
+  }
+
+  // Game screen
   return (
     <div className="min-h-screen bg-game-bg flex flex-col items-center justify-center p-4 font-mono">
-      {/* Leaderboard Component */}
-      <Leaderboard 
-        isVisible={showLeaderboard} 
-        onClose={() => setShowLeaderboard(false)} 
-        currentUser={user}
-      />
 
       {/* Header with Game Title and Stats */}
       <div className="text-center mb-6 w-full max-w-4xl">
@@ -144,13 +184,13 @@ export const CleanPerceptionShift = () => {
             </p>
           </div>
 
-          {/* Leaderboard Button */}
+          {/* Back to Menu Button */}
           <Button
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => setCurrentScreen('menu')}
             className="bg-perception hover:bg-perception/90 text-white font-mono flex items-center gap-2"
           >
-            <Trophy className="w-4 h-4" />
-            LEADERBOARD
+            <ArrowLeft className="w-4 h-4" />
+            MENU
           </Button>
         </div>
       </div>

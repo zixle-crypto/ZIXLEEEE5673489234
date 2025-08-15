@@ -38,6 +38,7 @@ interface GameState {
   score: number;
   totalShards: number;
   startTime: number;
+  roomStartTime: number;
   
   // Game status
   isPlaying: boolean;
@@ -105,6 +106,7 @@ export const useGameStore = create<GameStore>()(
       score: 0,
       totalShards: 0,
       startTime: Date.now(),
+      roomStartTime: Date.now(),
       
       isPlaying: true,
       isPaused: false,
@@ -135,6 +137,7 @@ export const useGameStore = create<GameStore>()(
           score: 0,
           totalShards: 0,
           startTime: Date.now(),
+          roomStartTime: Date.now(),
           isPlaying: true,
           isPaused: false,
           isGameOver: false,
@@ -254,6 +257,7 @@ export const useGameStore = create<GameStore>()(
           score: 0,
           totalShards: 0,
           startTime: Date.now(),
+          roomStartTime: Date.now(),
           isPlaying: true,
           isPaused: false,
           isGameOver: false,
@@ -289,11 +293,12 @@ export const useGameStore = create<GameStore>()(
         const currentRoomNumber = state.roomsCleared + 1;
         const nextRoomNumber = state.roomsCleared + 2;
         
-        // Calculate shards collected from current room (initial shards - remaining shards)
+        // Calculate shards collected from current room and completion time
         const initialShardCount = createRoom(currentRoomNumber).shards.length;
         const shardsCollected = initialShardCount - state.currentRoom.shards.length;
+        const completionTime = Math.floor((Date.now() - state.roomStartTime) / 1000);
         
-        console.log(`🚪 Completing room ${currentRoomNumber} with ${shardsCollected}/${initialShardCount} shards`);
+        console.log(`🚪 Completing room ${currentRoomNumber} with ${shardsCollected}/${initialShardCount} shards in ${completionTime}s`);
         
         try {
           // Call the complete-room edge function to update leaderboard
@@ -301,7 +306,8 @@ export const useGameStore = create<GameStore>()(
             body: {
               roomNumber: currentRoomNumber,
               currentScore: state.score + 500, // Include room completion bonus
-              shardsCollected: shardsCollected
+              shardsCollected: shardsCollected,
+              completionTime: completionTime
             }
           });
 
@@ -349,6 +355,7 @@ export const useGameStore = create<GameStore>()(
           currentRoom: newRoom,
           roomsCleared: state.roomsCleared + 1,
           score: state.score + 500, // Bonus for completing room
+          roomStartTime: Date.now(), // Reset timer for next room
         });
         
         console.log(`✅ Advanced to room ${nextRoomNumber}`);
