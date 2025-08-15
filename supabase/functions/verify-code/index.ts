@@ -182,7 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Generate access tokens for the new user
     const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'recovery',
       email: email.toLowerCase(),
     });
 
