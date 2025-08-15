@@ -76,9 +76,10 @@ const handler = async (req: Request): Promise<Response> => {
     let emailSent = false;
     
     try {
-      const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <noreply@zixlestudios.com>';
+      const fromEmail = Deno.env.get('EMAIL_FROM') || 'Perception Shift <onboarding@resend.dev>';
       console.log(`Sending verification email from: ${fromEmail} to: ${email}`);
       console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
+      console.log('EMAIL_FROM value:', Deno.env.get('EMAIL_FROM'));
       
       const emailResponse = await resend.emails.send({
         from: fromEmail,
