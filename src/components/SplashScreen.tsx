@@ -142,6 +142,20 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
             throw sessionError;
           }
           console.log('Session set successfully');
+        } else {
+          // No tokens returned, try to sign in with email (passwordless)
+          console.log('No tokens returned, attempting passwordless sign in...');
+          const { error: signInError } = await supabase.auth.signInWithOtp({
+            email: email.trim(),
+            options: {
+              shouldCreateUser: false
+            }
+          });
+          
+          if (signInError) {
+            console.error('Sign in error:', signInError);
+            // Don't throw here, just continue with the flow
+          }
         }
 
         toast({
