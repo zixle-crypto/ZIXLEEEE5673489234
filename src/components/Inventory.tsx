@@ -6,7 +6,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Box, Shield, Zap, Star, Gem, Package } from 'lucide-react';
-import { useShopStore, type CubeItem } from '@/stores/shopStore';
+import { useShopStore } from '@/stores/shopStore';
+import { useUserDataStore } from '@/stores/userDataStore';
 
 interface InventoryProps {
   onBack: () => void;
@@ -14,13 +15,14 @@ interface InventoryProps {
 
 export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
   const { 
-    purchasedItems, 
     activePowerUps, 
     applyPowerUp,
     consumePowerUp 
   } = useShopStore();
   
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'equipped' | CubeItem['rarity']>('all');
+  const { inventory: userInventory, gameData } = useUserDataStore();
+  
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'equipped' | string>('all');
 
   // Get cube templates for purchased items
   const CUBE_TEMPLATES = [
@@ -111,16 +113,11 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
     }
   ];
 
-  // Get owned cubes with counts
-  const ownedCubes = purchasedItems.reduce((acc, itemId) => {
-    const existing = acc.find(item => item.id === itemId);
-    if (existing) {
-      existing.count++;
-    } else {
-      const template = CUBE_TEMPLATES.find(t => t.id === itemId);
-      if (template) {
-        acc.push({ ...template, count: 1 });
-      }
+  // Get owned cubes with counts from user inventory
+  const ownedCubes = userInventory.reduce((acc, item) => {
+    const template = CUBE_TEMPLATES.find(t => t.id === item.cube_id);
+    if (template) {
+      acc.push({ ...template, count: item.quantity });
     }
     return acc;
   }, [] as Array<typeof CUBE_TEMPLATES[0] & { count: number }>);
@@ -128,9 +125,9 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
   const filteredItems = ownedCubes.filter(item => {
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'equipped') {
-      return (item.effect.type === 'shard_multiplier' && activePowerUps.shardMultiplier > 1) ||
-             (item.effect.type === 'speed_boost' && activePowerUps.speedBoost > 1) ||
-             (item.effect.type === 'protection' && activePowerUps.protection > 0);
+      return (item.effect.type === 'shard_multiplier' && (gameData?.active_shard_multiplier || 1) > 1) ||
+             (item.effect.type === 'speed_boost' && (gameData?.active_speed_boost || 1) > 1) ||
+             (item.effect.type === 'protection' && (gameData?.active_protection || 0) > 0);
     }
     return item.rarity === selectedCategory;
   });
@@ -171,11 +168,11 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
   const isEquipped = (item: typeof ownedCubes[0]) => {
     switch (item.effect.type) {
       case 'shard_multiplier':
-        return activePowerUps.shardMultiplier >= item.effect.value;
+        return (gameData?.active_shard_multiplier || 1) >= item.effect.value;
       case 'speed_boost':
-        return activePowerUps.speedBoost >= item.effect.value;
+        return (gameData?.active_speed_boost || 1) >= item.effect.value;
       case 'protection':
-        return activePowerUps.protection > 0;
+        return (gameData?.active_protection || 0) > 0;
       default:
         return false;
     }
@@ -235,15 +232,15 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-400" />
-            <span className="text-game-text">Shard Multiplier: {activePowerUps.shardMultiplier}x</span>
+            <span className="text-game-text">Shard Multiplier: {gameData?.active_shard_multiplier || 1}x</span>
           </div>
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-blue-400" />
-            <span className="text-game-text">Speed Boost: {Math.round((activePowerUps.speedBoost - 1) * 100)}%</span>
+            <span className="text-game-text">Speed Boost: {Math.round(((gameData?.active_speed_boost || 1) - 1) * 100)}%</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-green-400" />
-            <span className="text-game-text">Protection: {activePowerUps.protection} rooms</span>
+            <span className="text-game-text">Protection: {gameData?.active_protection || 0} rooms</span>
           </div>
         </div>
       </div>

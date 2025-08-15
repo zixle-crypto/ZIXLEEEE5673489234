@@ -12,6 +12,7 @@ import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
 import { useGameStore } from '@/stores/gameStore';
+import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
@@ -20,76 +21,45 @@ import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
-  const { initGame, isPlaying, totalShards, currentRank, lastRoomReward } = useGameStore();
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { initGame, isPlaying, currentRank, lastRoomReward } = useGameStore();
+  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory } = useUserDataStore();
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Handle email confirmation
-        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-          toast({
-            title: "Email confirmed!",
-            description: "Welcome to Zixle Studios! Your account has been activated.",
-          });
-          setCurrentUser(session.user.email || '');
-          setCurrentScreen('menu');
-          // Store current user for future sessions
-          localStorage.setItem('zixle-current-user', session.user.email || '');
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setUserData(session?.user ?? null);
       setLoading(false);
     });
 
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setUserData(session?.user ?? null);
+    });
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [setUserData]);
 
   useEffect(() => {
     if (currentScreen === 'game') {
-      // Initialize game once and ensure it's playing
-      console.log('Initializing game...');
       initGame();
-      
-      // Force a second initialization after a brief delay to ensure state is set
-      setTimeout(() => {
-        console.log('Ensuring game is initialized and playing...');
-        initGame();
-      }, 100);
     }
   }, [initGame, currentScreen]);
 
   const handleUserComplete = (userEmail: string) => {
-    setCurrentUser(userEmail);
     setCurrentScreen('menu');
-    
-    // Store current user for future sessions
-    localStorage.setItem('zixle-current-user', userEmail);
   };
 
-  const handleShopPurchase = (itemId: string, cost: number) => {
-    // For now, just deduct shards (in a real app, you'd store purchases)
-    if (totalShards >= cost) {
-      // This would typically update a user purchases table
-      console.log(`Purchased ${itemId} for ${cost} shards`);
-      // Update total shards here if you have the setter
-    }
+  const handleShopPurchase = async (itemId: string, cost: number) => {
+    await updateShards(-cost);
+    await addCubeToInventory(itemId);
   };
 
   // Show loading state while checking auth
@@ -117,7 +87,7 @@ export const CleanPerceptionShift = () => {
         onLeaderboard={() => setCurrentScreen('leaderboard')}
         onShop={() => setCurrentScreen('shop')}
         onInventory={() => setCurrentScreen('inventory')}
-        totalShards={totalShards}
+        totalShards={gameData?.total_shards || 0}
       />
     );
   }
@@ -138,7 +108,7 @@ export const CleanPerceptionShift = () => {
     return (
       <Shop
         onBack={() => setCurrentScreen('menu')}
-        totalShards={totalShards}
+        totalShards={gameData?.total_shards || 0}
         onPurchase={handleShopPurchase}
       />
     );
@@ -164,7 +134,7 @@ export const CleanPerceptionShift = () => {
             <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-perception" />
-                <span className="text-perception font-bold">{totalShards}</span>
+                <span className="text-perception font-bold">{gameData?.total_shards || 0}</span>
                 <span className="text-game-text-dim text-sm">⬟ Shards</span>
               </div>
             </div>
