@@ -72,7 +72,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with verification code
     try {
-      const fromEmail = Deno.env.get('EMAIL_FROM') || 'onboarding@resend.dev';
+      // Force use your own verified email for now
+      const fromEmail = 'iarmaanindcode@gmail.com';
       console.log(`Attempting to send verification email from: ${fromEmail} to: ${email}`);
       console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
       console.log('EMAIL_FROM value:', Deno.env.get('EMAIL_FROM'));
