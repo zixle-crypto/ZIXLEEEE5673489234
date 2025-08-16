@@ -33,13 +33,13 @@ serve(async (req: Request) => {
       );
     }
 
-    // Check if trying to send to a different email than the API key owner
-    if (email.toLowerCase() !== 'iarmaanindcode@gmail.com') {
-      console.log("Email must be iarmaanindcode@gmail.com for testing");
-      return new Response(
-        JSON.stringify({ error: "For testing, please use iarmaanindcode@gmail.com" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // Demo mode: If not the verified email, still save to DB but don't send email
+    const isVerifiedEmail = email.toLowerCase() === 'iarmaanindcode@gmail.com';
+    let demoMode = false;
+    
+    if (!isVerifiedEmail) {
+      console.log("Demo mode: Email verification code stored but email not sent due to Resend limitations");
+      demoMode = true;
     }
 
     // Initialize Resend
@@ -82,55 +82,64 @@ serve(async (req: Request) => {
       );
     }
 
-    // Send email using Resend
-    console.log("Sending email via Resend...");
+    let emailId = null;
     
-    const emailResponse = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Use Resend's default testing domain
-      to: [email],
-      subject: "Your Perception Shift Verification Code",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #000; color: #fff;">
-          <h1 style="color: #00ff41; text-align: center;">PERCEPTION SHIFT</h1>
-          <div style="background: #111; padding: 30px; border-radius: 8px; text-align: center;">
-            <p style="font-size: 18px; margin-bottom: 20px;">Your verification code:</p>
-            <div style="font-size: 36px; font-weight: bold; color: #00ff41; background: #222; padding: 15px; border-radius: 4px; letter-spacing: 4px;">
-              ${code}
+    // Only send email for verified addresses, but always save to DB
+    if (isVerifiedEmail) {
+      console.log("Sending email via Resend...");
+      
+      const emailResponse = await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: [email],
+        subject: "Your Perception Shift Verification Code",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #000; color: #fff;">
+            <h1 style="color: #00ff41; text-align: center;">PERCEPTION SHIFT</h1>
+            <div style="background: #111; padding: 30px; border-radius: 8px; text-align: center;">
+              <p style="font-size: 18px; margin-bottom: 20px;">Your verification code:</p>
+              <div style="font-size: 36px; font-weight: bold; color: #00ff41; background: #222; padding: 15px; border-radius: 4px; letter-spacing: 4px;">
+                ${code}
+              </div>
+              <p style="margin-top: 20px; font-size: 14px; color: #999;">
+                This code expires in 5 minutes
+              </p>
             </div>
-            <p style="margin-top: 20px; font-size: 14px; color: #999;">
-              This code expires in 5 minutes
-            </p>
           </div>
-        </div>
-      `,
-    });
+        `,
+      });
 
-    console.log("Resend response:", JSON.stringify(emailResponse, null, 2));
+      console.log("Resend response:", JSON.stringify(emailResponse, null, 2));
 
-    if (emailResponse.error) {
-      console.error('Resend error:', emailResponse.error);
-      return new Response(
-        JSON.stringify({ error: "Email sending failed: " + emailResponse.error.message }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      if (emailResponse.error) {
+        console.error('Resend error:', emailResponse.error);
+        return new Response(
+          JSON.stringify({ error: "Email sending failed: " + emailResponse.error.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      if (!emailResponse.data) {
+        console.error('No data returned from Resend');
+        return new Response(
+          JSON.stringify({ error: "Email service returned no data" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      emailId = emailResponse.data.id;
+      console.log('SUCCESS! Email sent with ID:', emailId);
+    } else {
+      console.log('Demo mode: Code saved to database but email not sent');
     }
-
-    if (!emailResponse.data) {
-      console.error('No data returned from Resend');
-      return new Response(
-        JSON.stringify({ error: "Email service returned no data" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    console.log('SUCCESS! Email sent with ID:', emailResponse.data.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Verification code sent successfully",
+        message: demoMode ? "Demo mode: Code generated (check console)" : "Verification code sent successfully",
         expiresAt: expiresAt.toISOString(),
-        emailId: emailResponse.data.id
+        emailId: emailId,
+        demoMode: demoMode,
+        demoCode: demoMode ? code : undefined
       }),
       {
         status: 200,
