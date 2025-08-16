@@ -28,9 +28,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('=== VERIFICATION CODE REQUEST START ===');
     const { email }: SendCodeRequest = await req.json();
+    console.log('Email received:', email);
 
     if (!email || !email.includes('@')) {
+      console.log('Invalid email provided:', email);
       return new Response(
         JSON.stringify({ error: "Valid email address is required" }),
         {
@@ -73,10 +76,11 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email with verification code
     try {
       // Use the same email as your API key owner for testing
-      const fromEmail = 'Zixle Studios <iarmaanindcode@gmail.com>';
+      const fromEmail = 'Perception Shift <iarmaanindcode@gmail.com>';
       console.log(`Attempting to send verification email from: ${fromEmail} to: ${email}`);
       console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
       console.log('EMAIL_FROM value:', Deno.env.get('EMAIL_FROM'));
+      console.log('About to call resend.emails.send...');
       
       const emailResponse = await resend.emails.send({
         from: fromEmail,
