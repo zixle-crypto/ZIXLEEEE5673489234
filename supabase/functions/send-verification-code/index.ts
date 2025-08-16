@@ -2,14 +2,9 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface SendCodeRequest {
@@ -22,31 +17,44 @@ function generateVerificationCode(): string {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("=== FUNCTION STARTED ===");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('=== VERIFICATION CODE REQUEST START ===');
+    console.log("Parsing request body...");
     const { email }: SendCodeRequest = await req.json();
-    console.log('Email received:', email);
+    console.log("Email received:", email);
 
     if (!email || !email.includes('@')) {
-      console.log('Invalid email provided:', email);
+      console.log("Invalid email provided");
       return new Response(
         JSON.stringify({ error: "Valid email address is required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
+    // Initialize Resend with API key
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY not configured");
+    }
+
+    const resend = new Resend(resendApiKey);
+
     // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Clean up any existing codes for this email
+    console.log("Cleaning up existing codes...");
     await supabase
       .from('verification_codes')
       .delete()
@@ -56,9 +64,10 @@ const handler = async (req: Request): Promise<Response> => {
     const code = generateVerificationCode();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
-    console.log(`Generating verification code for ${email}: ${code}`);
+    console.log(`Generated code: ${code} for ${email}`);
 
     // Store the code in the database
+    console.log("Storing code in database...");
     const { error: dbError } = await supabase
       .from('verification_codes')
       .insert({
@@ -74,103 +83,61 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send email with verification code
-    try {
-      // Use the same email as your API key owner for testing
-      const fromEmail = 'Perception Shift <iarmaanindcode@gmail.com>';
-      console.log(`Attempting to send verification email from: ${fromEmail} to: ${email}`);
-      console.log('RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'));
-      console.log('EMAIL_FROM value:', Deno.env.get('EMAIL_FROM'));
-      console.log('About to call resend.emails.send...');
-      
-      const emailResponse = await resend.emails.send({
-        from: fromEmail,
-        to: [email],
-        subject: "Your Perception Shift Verification Code",
-        html: `
-          <div style="font-family: 'Courier New', monospace; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: #ffffff; padding: 40px; border-radius: 8px;">
-            <div style="text-align: center; margin-bottom: 40px;">
-              <h1 style="font-size: 32px; font-weight: 900; letter-spacing: 2px; margin: 0; background: linear-gradient(45deg, #00ff41, #41ff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                ZIXLE STUDIOS
-              </h1>
-              <h2 style="font-size: 18px; font-weight: 700; letter-spacing: 1px; margin: 10px 0 0 0; color: #00ff41;">
-                PERCEPTION SHIFT
-              </h2>
+    console.log("Sending email...");
+    const fromEmail = 'iarmaanindcode@gmail.com'; // Your verified email
+    
+    const emailResponse = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
+      subject: "Your Perception Shift Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #000; color: #fff;">
+          <h1 style="color: #00ff41; text-align: center;">PERCEPTION SHIFT</h1>
+          <div style="background: #111; padding: 30px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 18px; margin-bottom: 20px;">Your verification code:</p>
+            <div style="font-size: 36px; font-weight: bold; color: #00ff41; background: #222; padding: 15px; border-radius: 4px;">
+              ${code}
             </div>
-            
-            <div style="background: #000000; border: 2px solid #00ff41; border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 30px;">
-              <p style="font-size: 16px; color: #cccccc; margin: 0 0 20px 0;">
-                Your verification code is:
-              </p>
-              <div style="font-size: 48px; font-weight: 900; letter-spacing: 8px; color: #00ff41; background: #1a1a1a; padding: 20px; border-radius: 4px; border: 1px solid #333;">
-                ${code}
-              </div>
-              <p style="font-size: 14px; color: #999999; margin: 20px 0 0 0;">
-                This code will expire in 5 minutes
-              </p>
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 30px;">
-              <p style="font-size: 16px; color: #cccccc; margin: 0 0 10px 0;">
-                Enter this code in the game to verify your account and begin your journey.
-              </p>
-              <p style="font-size: 14px; color: #999999; margin: 0;">
-                Reality is about to shift...
-              </p>
-            </div>
-            
-            <div style="border-top: 1px solid #333; padding-top: 20px; text-align: center;">
-              <p style="font-size: 12px; color: #666666; margin: 0;">
-                If you didn't request this code, you can safely ignore this email.
-              </p>
-              <p style="font-size: 12px; color: #666666; margin: 5px 0 0 0;">
-                This is an automated message from Zixle Studios.
-              </p>
-            </div>
+            <p style="margin-top: 20px; font-size: 14px; color: #999;">
+              This code expires in 5 minutes
+            </p>
           </div>
-        `,
-      });
+        </div>
+      `,
+    });
 
-      console.log("Email response:", JSON.stringify(emailResponse, null, 2));
+    console.log("Email response:", emailResponse);
 
-      if (emailResponse.error) {
-        console.error('Email sending error:', JSON.stringify(emailResponse.error, null, 2));
-        const errorMessage = emailResponse.error?.message || emailResponse.error?.error || JSON.stringify(emailResponse.error);
-        throw new Error(`Failed to send email: ${errorMessage}`);
-      }
-
-      if (!emailResponse.data) {
-        console.error('No data in email response:', emailResponse);
-        throw new Error('Email service returned no data');
-      }
-
-      console.log('Email sent successfully! ID:', emailResponse.data.id);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Verification code sent successfully",
-          expiresAt: expiresAt.toISOString()
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        }
-      );
-    } catch (emailError: any) {
-      console.error('Email sending failed with exception:', emailError);
-      console.error('Error details:', JSON.stringify(emailError, null, 2));
-      throw new Error(`Email service error: ${emailError.message || emailError}`);
+    if (emailResponse.error) {
+      console.error('Email error:', emailResponse.error);
+      throw new Error(`Email failed: ${emailResponse.error.message}`);
     }
+
+    if (!emailResponse.data) {
+      throw new Error('No email data returned');
+    }
+
+    console.log('SUCCESS! Email sent with ID:', emailResponse.data.id);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Verification code sent successfully",
+        expiresAt: expiresAt.toISOString()
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      }
+    );
+
   } catch (error: any) {
-    console.error("Error in send-verification-code function:", error);
+    console.error("FUNCTION ERROR:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       }
     );
   }
