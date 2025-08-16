@@ -3,8 +3,9 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': 'https://ihvnriqsrdhayysfcywm.lovableproject.com',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface SendCodeRequest {
@@ -15,6 +16,78 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const hashCode = async (code: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(code);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+const checkRateLimit = async (supabase: any, email: string): Promise<boolean> => {
+  const now = new Date();
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  
+  // Check current rate limit status
+  const { data: attempts } = await supabase
+    .from('verification_attempts')
+    .select('*')
+    .eq('email', email)
+    .single();
+  
+  if (attempts) {
+    // Check if blocked
+    if (attempts.blocked_until && new Date(attempts.blocked_until) > now) {
+      return false;
+    }
+    
+    // Check if within rate limit window
+    if (new Date(attempts.last_attempt) > fiveMinutesAgo) {
+      if (attempts.attempt_count >= 3) {
+        // Block for 15 minutes
+        await supabase
+          .from('verification_attempts')
+          .update({ 
+            blocked_until: new Date(now.getTime() + 15 * 60 * 1000).toISOString(),
+            attempt_count: attempts.attempt_count + 1 
+          })
+          .eq('email', email);
+        return false;
+      }
+      
+      // Increment attempt count
+      await supabase
+        .from('verification_attempts')
+        .update({ 
+          attempt_count: attempts.attempt_count + 1,
+          last_attempt: now.toISOString()
+        })
+        .eq('email', email);
+    } else {
+      // Reset attempt count
+      await supabase
+        .from('verification_attempts')
+        .update({ 
+          attempt_count: 1,
+          last_attempt: now.toISOString(),
+          blocked_until: null
+        })
+        .eq('email', email);
+    }
+  } else {
+    // Create new attempt record
+    await supabase
+      .from('verification_attempts')
+      .insert({
+        email,
+        attempt_count: 1,
+        last_attempt: now.toISOString()
+      });
+  }
+  
+  return true;
+};
+
 serve(async (req: Request) => {
   console.log("=== EMAIL FUNCTION STARTED ===");
   
@@ -24,7 +97,6 @@ serve(async (req: Request) => {
 
   try {
     const { email }: SendCodeRequest = await req.json();
-    console.log("Processing email:", email);
 
     if (!email || !email.includes('@')) {
       return new Response(
@@ -33,37 +105,33 @@ serve(async (req: Request) => {
       );
     }
 
-    // Using custom domain - can send to any email
-    console.log("Sending to email:", email);
-
-    // Initialize Resend
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    console.log("RESEND_API_KEY exists:", !!resendApiKey);
-    
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY not configured");
-    }
-
-    const resend = new Resend(resendApiKey);
-
-    // Initialize Supabase
+    // Initialize Supabase with service role for rate limiting
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check rate limiting
+    const canProceed = await checkRateLimit(supabase, email.toLowerCase());
+    if (!canProceed) {
+      return new Response(JSON.stringify({ error: 'Too many attempts. Please try again later.' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Generate verification code
     const code = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const hashedCode = await hashCode(code);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    console.log("Generated verification code:", code);
+    console.log("Generated verification code for:", email);
 
-    // Store in database
-    console.log("Storing code in database...");
+    // Store hashed code in database
     const { error: dbError } = await supabase
       .from('verification_codes')
       .upsert({
         email: email.toLowerCase(),
-        code: code,
+        code: hashedCode,
         expires_at: expiresAt.toISOString(),
         verified: false
       });
@@ -76,9 +144,15 @@ serve(async (req: Request) => {
       );
     }
 
-    // Send email using custom domain
-    console.log("Sending email via Resend...");
-    
+    // Initialize Resend
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY not configured");
+    }
+
+    const resend = new Resend(resendApiKey);
+
+    // Send email with plaintext code (only in email)
     const emailResponse = await resend.emails.send({
       from: 'noreply@zixlestudios.com',
       to: [email],
@@ -99,8 +173,6 @@ serve(async (req: Request) => {
       `,
     });
 
-    console.log("Resend response:", JSON.stringify(emailResponse, null, 2));
-
     if (emailResponse.error) {
       console.error('Resend error:', emailResponse.error);
       return new Response(
@@ -117,14 +189,13 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('SUCCESS! Email sent with ID:', emailResponse.data.id);
+    console.log('SUCCESS! Email sent');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "Verification code sent successfully",
-        expiresAt: expiresAt.toISOString(),
-        emailId: emailResponse.data.id
+        expiresAt: expiresAt.toISOString()
       }),
       {
         status: 200,

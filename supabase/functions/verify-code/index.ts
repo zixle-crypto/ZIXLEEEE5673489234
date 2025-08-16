@@ -1,13 +1,16 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// Follow this template to write a good function:
+// 1. Import the necessary dependencies
+// 2. Define the types
+// 3. Define the main logic
+// 4. Export the handler
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': 'https://ihvnriqsrdhayysfcywm.lovableproject.com',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface VerifyCodeRequest {
@@ -15,9 +18,17 @@ interface VerifyCodeRequest {
   code: string;
 }
 
+const hashCode = async (code: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(code);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -25,88 +36,51 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, code }: VerifyCodeRequest = await req.json();
 
     if (!email || !code) {
-      return new Response(
-        JSON.stringify({ error: "Email and code are required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Email and code are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Create Supabase client with service role key for admin operations
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    console.log(`Verifying code for ${email}: ${code}`);
+    const hashedCode = await hashCode(code);
 
-    // First, check if the verification code exists and is valid
+    // Find valid verification code using hashed code
     const { data: verificationData, error: verificationError } = await supabase
       .from('verification_codes')
       .select('*')
       .eq('email', email.toLowerCase())
-      .eq('code', code)
+      .eq('code', hashedCode)
       .eq('verified', false)
-      .gte('expires_at', new Date().toISOString())
-      .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    console.log('Verification lookup result:', { verificationData, verificationError });
-
-    if (verificationError) {
-      console.log('Database error during verification:', verificationError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Database error during verification" 
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    if (!verificationData) {
-      console.log('No valid verification code found - code may be invalid, expired, or already used');
+    if (verificationError || !verificationData) {
+      console.log('No valid verification code found');
+      // Check if user already exists without revealing if code was wrong or user exists
+      const { data: { user }, error: userError } = await supabase.auth.admin.getUserByEmail(email);
       
-      // Check if the user already exists and is verified
-      const { data: existingUser, error: userCheckError } = await supabase.auth.admin.listUsers();
-      
-      if (!userCheckError && existingUser?.users) {
-        const userExists = existingUser.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-        
-        if (userExists) {
-          console.log('User already exists and is verified - generating sign-in token');
-          
-          // For existing users, just return success - let the client handle sign in
-          console.log('User already exists and is verified - allowing verification');
-          
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: "Code verified successfully",
-              user_exists: true
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...corsHeaders },
-            }
-          );
-        }
+      if (user && !userError) {
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'User already verified',
+          userId: user.id 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Invalid or expired verification code. Please request a new one." 
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Invalid verification code' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Mark the code as verified
+    // Mark code as verified
     const { error: updateError } = await supabase
       .from('verification_codes')
       .update({ verified: true })
@@ -117,70 +91,64 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Failed to update verification status');
     }
 
-    // Create the user account using admin API
-    const { data: userData, error: signUpError } = await supabase.auth.admin.createUser({
-      email: email.toLowerCase(),
-      email_confirm: true, // Auto-confirm the email since they verified via code
+    // Create user with email already confirmed
+    const { data: userData, error: createError } = await supabase.auth.admin.createUser({
+      email: email,
+      email_confirm: true,
       user_metadata: {
-        verified_via_code: true,
-        verification_timestamp: new Date().toISOString()
+        email_verified: true,
+        verified_at: new Date().toISOString()
       }
     });
 
-    if (signUpError) {
-      // If user already exists, that's okay - we'll sign them in
-      if (signUpError.message.includes('already been registered') || signUpError.code === 'email_exists') {
-        console.log('User already exists, proceeding with sign-in');
-        
-        // For existing users, just return success
-        console.log('User already exists, verification successful');
-        
-        return new Response(
-          JSON.stringify({ 
+    if (createError) {
+      console.error('Error creating user:', createError);
+      
+      // If user already exists, that's ok
+      if (createError.message?.includes('already registered')) {
+        const { data: { user }, error: getUserError } = await supabase.auth.admin.getUserByEmail(email);
+        if (user && !getUserError) {
+          return new Response(JSON.stringify({ 
             success: true, 
-            message: "Code verified successfully",
-            user_exists: true
-          }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      } else {
-        console.error('Error creating user:', signUpError);
-        throw new Error('Failed to create user account');
+            message: 'User verified successfully',
+            userId: user.id 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
+      
+      throw new Error('Failed to create user');
     }
 
-    console.log('User created successfully:', userData.user?.id);
-
     // Clean up old verification codes for this email
-    await supabase
+    const { error: cleanupError } = await supabase
       .from('verification_codes')
       .delete()
-      .eq('email', email.toLowerCase());
+      .eq('email', email.toLowerCase())
+      .neq('id', verificationData.id);
 
-    // For new users, just return success - let the client handle sign in
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Code verified and account created successfully",
-        user_created: true
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    if (cleanupError) {
+      console.warn('Failed to cleanup old verification codes:', cleanupError);
+      // Don't fail the request for cleanup errors
+    }
+
+    console.log('User verified and created successfully');
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Email verified successfully',
+      userId: userData.user?.id 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error: any) {
-    console.error("Error in verify-code function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    console.error('Error in verify-code function:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 };
 

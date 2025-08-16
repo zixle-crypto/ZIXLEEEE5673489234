@@ -278,6 +278,33 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_attempts: {
+        Row: {
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          email: string
+          id: string
+          last_attempt: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          last_attempt?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_attempt?: string | null
+        }
+        Relationships: []
+      }
       verification_codes: {
         Row: {
           code: string
@@ -318,12 +345,12 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: {
           best_score: number
-          email: string
           is_current_user: boolean
           rank: number
           rooms_completed: number
           total_shards: number
           user_id: string
+          username: string
         }[]
       }
       update_leaderboard: {

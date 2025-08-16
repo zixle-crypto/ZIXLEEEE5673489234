@@ -5,9 +5,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': 'https://ihvnriqsrdhayysfcywm.lovableproject.com',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface CompleteRoomRequest {
@@ -50,27 +50,37 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Room completion for user ${userEmail}: Room ${roomNumber}, Score: ${currentScore}, Shards: ${shardsCollected}, Time: ${completionTime}s`);
 
-    // Calculate shard reward based on room difficulty and completion time
-    const baseShardReward = 10; // Base shards per room
-    const difficultyMultiplier = Math.floor(roomNumber / 5) + 1; // Increases every 5 rooms
+    // Basic anti-abuse: limit rewards based on reasonable completion times
+    const minCompletionTime = Math.max(10, roomNumber * 2); // Minimum reasonable time
+    const maxRewardableTime = roomNumber * 30; // Maximum time for full rewards
     
-    // Time bonus: faster completion = more shards (30 second target, max 2x multiplier)
-    let timeMultiplier = 1;
-    if (completionTime && completionTime > 0) {
-      const targetTime = 30; // 30 seconds target
-      timeMultiplier = Math.min(2, Math.max(0.5, targetTime / completionTime));
+    if (completionTime && completionTime < minCompletionTime) {
+      console.warn(`Suspicious completion time for user ${userId}: ${completionTime}s for room ${roomNumber}`);
+      return new Response(JSON.stringify({ error: 'Invalid completion time' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Calculate shard rewards based on room number and completion time
+    let baseShards = Math.min(roomNumber * 10, 1000); // Cap base shards to prevent inflation
+    let timeBonus = 0;
+    
+    if (completionTime && completionTime < maxRewardableTime) {
+      const efficiency = Math.max(0, (maxRewardableTime - completionTime) / maxRewardableTime);
+      timeBonus = Math.floor(efficiency * baseShards * 0.5); // Max 50% bonus
     }
     
-    const shardsEarned = Math.floor((baseShardReward * difficultyMultiplier + shardsCollected) * timeMultiplier);
+    const totalShards = Math.min(Math.max(shardsCollected, baseShards + timeBonus), 2000); // Overall cap
 
-    console.log(`Calculated shard reward: ${shardsEarned} (base: ${baseShardReward}, difficulty: ${difficultyMultiplier}x, time: ${timeMultiplier.toFixed(2)}x, collected: ${shardsCollected})`);
+    console.log(`Calculated shard reward: ${totalShards} (base: ${baseShards}, time bonus: ${timeBonus}, collected: ${shardsCollected})`);
 
     // Update leaderboard using the database function with service role key
     const { data: leaderboardResult, error: leaderboardError } = await supabase
       .rpc('update_leaderboard', {
         p_user_id: userId,
         p_email: userEmail,
-        p_shards_earned: shardsEarned,
+        p_shards_earned: totalShards,
         p_current_score: currentScore
       });
 
@@ -84,9 +94,9 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        shardsEarned,
+        shardsEarned: totalShards,
         leaderboardData: leaderboardResult,
-        message: `Room ${roomNumber} completed! Earned ${shardsEarned} shards!`
+        message: `Room ${roomNumber} completed! Earned ${totalShards} shards!`
       }),
       {
         status: 200,

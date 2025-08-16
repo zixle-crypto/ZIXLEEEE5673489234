@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 interface LeaderboardEntry {
   rank: number;
   user_id: string;
-  email: string;
+  username: string;
   total_shards: number;
   rooms_completed: number;
   best_score: number;
@@ -98,8 +98,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
     }
   };
 
-  const getDisplayName = (email: string) => {
-    return email.split('@')[0];
+  const getDisplayName = (username: string) => {
+    return username;
   };
 
   const getUsersAroundCurrentUser = () => {
@@ -147,8 +147,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
                         {getRankIcon(currentUserRank.rank)}
                         <div>
                           <h3 className="font-bold text-perception font-mono">YOUR RANK</h3>
-                          <p className="text-game-text-dim text-sm font-mono">
-                            {getDisplayName(currentUserRank.email)}
+                           <p className="text-game-text-dim text-sm font-mono">
+                            {getDisplayName(currentUserRank.username)}
                           </p>
                         </div>
                       </div>
@@ -193,9 +193,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
                               <span className="font-bold text-game-text font-mono">
                                 #{entry.rank}
                               </span>
-                              <span className={`font-mono ${entry.is_current_user ? 'text-perception font-bold' : 'text-game-text'}`}>
-                                {getDisplayName(entry.email)}
-                              </span>
+                               <span className={`font-mono ${entry.is_current_user ? 'text-perception font-bold' : 'text-game-text'}`}>
+                                 {getDisplayName(entry.username)}
+                               </span>
                               {entry.is_current_user && (
                                 <Badge variant="outline" className="text-xs border-perception text-perception">
                                   YOU
@@ -243,9 +243,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
                                 <span className="font-bold text-game-text font-mono">
                                   #{entry.rank}
                                 </span>
-                                <span className={`font-mono ${entry.is_current_user ? 'text-perception font-bold' : 'text-game-text'}`}>
-                                  {getDisplayName(entry.email)}
-                                </span>
+                                 <span className={`font-mono ${entry.is_current_user ? 'text-perception font-bold' : 'text-game-text'}`}>
+                                   {getDisplayName(entry.username)}
+                                 </span>
                                 {entry.is_current_user && (
                                   <Badge variant="outline" className="text-xs border-perception text-perception">
                                     YOU
