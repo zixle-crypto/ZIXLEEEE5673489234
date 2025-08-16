@@ -33,14 +33,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // Demo mode: If not the verified email, still save to DB but don't send email
-    const isVerifiedEmail = email.toLowerCase() === 'iarmaanindcode@gmail.com';
-    let demoMode = false;
-    
-    if (!isVerifiedEmail) {
-      console.log("Demo mode: Email verification code stored but email not sent due to Resend limitations");
-      demoMode = true;
-    }
+    // Try to send to any email - if it fails due to Resend limitations, fall back to demo mode
+    console.log("Attempting to send to email:", email);
 
     // Initialize Resend
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -82,12 +76,12 @@ serve(async (req: Request) => {
       );
     }
 
+    // Try to send email to any address
+    console.log("Sending email via Resend...");
     let emailId = null;
+    let demoMode = false;
     
-    // Only send email for verified addresses, but always save to DB
-    if (isVerifiedEmail) {
-      console.log("Sending email via Resend...");
-      
+    try {
       const emailResponse = await resend.emails.send({
         from: 'onboarding@resend.dev',
         to: [email],
@@ -112,24 +106,20 @@ serve(async (req: Request) => {
 
       if (emailResponse.error) {
         console.error('Resend error:', emailResponse.error);
-        return new Response(
-          JSON.stringify({ error: "Email sending failed: " + emailResponse.error.message }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+        // If email fails, enable demo mode instead of failing completely
+        console.log('Email failed, falling back to demo mode');
+        demoMode = true;
+      } else if (emailResponse.data) {
+        emailId = emailResponse.data.id;
+        console.log('SUCCESS! Email sent with ID:', emailId);
+      } else {
+        console.log('No email data returned, using demo mode');
+        demoMode = true;
       }
-
-      if (!emailResponse.data) {
-        console.error('No data returned from Resend');
-        return new Response(
-          JSON.stringify({ error: "Email service returned no data" }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      emailId = emailResponse.data.id;
-      console.log('SUCCESS! Email sent with ID:', emailId);
-    } else {
-      console.log('Demo mode: Code saved to database but email not sent');
+    } catch (emailError: any) {
+      console.error('Email sending error:', emailError);
+      console.log('Falling back to demo mode due to email error');
+      demoMode = true;
     }
 
     return new Response(
