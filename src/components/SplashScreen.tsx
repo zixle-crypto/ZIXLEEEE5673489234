@@ -17,11 +17,7 @@ type Screen = 'splash' | 'welcome' | 'enter-email' | 'verify-code';
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
-  const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
   // If user is already authenticated, complete the flow
   useEffect(() => {
@@ -40,150 +36,48 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
     }
   }, [currentScreen]);
 
-  // Countdown timer for resend cooldown
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendCooldown > 0) {
-      interval = setInterval(() => {
-        setResendCooldown(prev => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendCooldown]);
-
-  const sendVerificationCode = async () => {
-    if (!email.trim()) {
-      toast({
-        title: "Email required",
-        description: "Please enter an email address to continue",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const signInWithGoogle = async () => {
     setIsLoading(true);
-    
     try {
-      const { data, error } = await supabase.functions.invoke('send-verification-code', {
-        body: { email: email.trim() }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.success) {
-        // Handle demo mode for emails that can't be sent
-        if (data.demoMode && data.demoCode) {
-          toast({
-            title: "Demo Mode - Code Generated",
-            description: `Your verification code is: ${data.demoCode}\n(Email service limited in demo mode)`,
-          });
-        } else {
-          toast({
-            title: "Verification code sent!",
-            description: `We've sent a 6-digit code to ${email}. Please check your email.`,
-          });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
         }
-        setExpiresAt(new Date(data.expiresAt));
-        setCurrentScreen('verify-code');
-        setResendCooldown(30); // 30 second cooldown
-      }
+      });
+      
+      if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send verification code. Please try again.",
+        title: "Sign in failed",
+        description: error.message,
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const verifyCode = async () => {
-    if (!verificationCode.trim() || verificationCode.length !== 6) {
-      toast({
-        title: "Invalid code",
-        description: "Please enter the complete 6-digit verification code",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const signInWithGitHub = async () => {
     setIsLoading(true);
-    
     try {
-      const { data, error } = await supabase.functions.invoke('verify-code', {
-        body: { 
-          email: email.trim(), 
-          code: verificationCode.trim() 
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin
         }
       });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.success) {
-        console.log('Verification successful, data:', data);
-        
-        // Sign in with OTP for both existing and new users
-        console.log('Signing in user with OTP...');
-        const { error: signInError } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: {
-            shouldCreateUser: !data.user_exists
-          }
-        });
-
-        if (signInError && !signInError.message.includes('rate_limit')) {
-          console.error('Sign in error:', signInError);
-          throw signInError;
-        }
-
-        toast({
-          title: data.user_created ? "Welcome to Zixle Studios!" : "Welcome back!",
-          description: data.user_created 
-            ? `Account created! Your progress will be saved automatically.` 
-            : `Welcome back! Your saved progress has been loaded.`,
-        });
-        
-        console.log('About to call onComplete...');
-        // Complete immediately - the auth state change will handle navigation
-        onComplete(email);
-      } else {
-        throw new Error(data.error || "Invalid verification code");
-      }
+      
+      if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "Verification failed",
-        description: error.message || "Invalid or expired verification code. Please try again.",
+        title: "Sign in failed", 
+        description: error.message,
         variant: "destructive"
       });
-      setVerificationCode('');
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const getTimeRemaining = (): string => {
-    if (!expiresAt) return '';
-    const now = new Date();
-    const timeLeft = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   if (currentScreen === 'splash') {
     return (
@@ -207,174 +101,45 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
               PERCEPTION SHIFT
             </CardTitle>
             <p className="text-game-text-dim text-sm font-mono">
-              Enter your email to begin or continue
+              Sign in to save your progress
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
-              onClick={() => setCurrentScreen('enter-email')}
-              className="w-full bg-perception hover:bg-perception/90 text-white font-mono"
+              onClick={signInWithGoogle}
+              className="w-full bg-white hover:bg-gray-100 text-black font-mono border border-gray-300"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'SIGNING IN...' : '🔗 CONTINUE WITH GOOGLE'}
+            </Button>
+            <Button
+              onClick={signInWithGitHub}
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-mono border border-gray-700"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'SIGNING IN...' : '🔗 CONTINUE WITH GITHUB'}
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-game-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-game-surface px-2 text-game-text-dim font-mono">OR</span>
+              </div>
+            </div>
+            <Button
+              onClick={() => onComplete('guest')}
+              variant="outline"
+              className="w-full border-game-border text-game-text hover:bg-game-bg font-mono"
               size="lg"
             >
-              ENTER EMAIL
+              PLAY AS GUEST
             </Button>
             <p className="text-center text-xs text-game-text-dim font-mono">
-              We'll send you a 6-digit code to verify your email.<br/>
-              <span className="text-perception">Your game progress will be saved automatically!</span>
+              <span className="text-perception">Sign in to save your progress, scores, and unlock achievements!</span>
             </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (currentScreen === 'enter-email') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-game-surface border-game-border shadow-2xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-black text-perception font-orbitron">
-              ENTER EMAIL
-            </CardTitle>
-            <p className="text-game-text-dim text-sm font-mono">
-              We'll send you a verification code
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-game-text font-mono">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="bg-game-bg border-game-border text-game-text font-mono"
-                disabled={isLoading}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    sendVerificationCode();
-                  }
-                }}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setCurrentScreen('welcome')}
-                variant="outline"
-                className="flex-1 border-game-border text-game-text hover:bg-game-bg font-mono"
-                disabled={isLoading}
-              >
-                BACK
-              </Button>
-              <Button
-                onClick={sendVerificationCode}
-                className="flex-1 bg-perception hover:bg-perception/90 text-white font-mono"
-                disabled={isLoading}
-              >
-                {isLoading ? 'SENDING...' : 'SEND CODE'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (currentScreen === 'verify-code') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-game-surface border-game-border shadow-2xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-black text-perception font-orbitron">
-              VERIFY CODE
-            </CardTitle>
-            <p className="text-game-text-dim text-sm font-mono">
-              Enter the 6-digit code sent to
-            </p>
-            <p className="text-perception text-sm font-mono font-bold">
-              {email}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <InputOTP
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(value) => setVerificationCode(value)}
-                  disabled={isLoading}
-                >
-                  <InputOTPGroup className="gap-2">
-                    <InputOTPSlot 
-                      index={0} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                    <InputOTPSlot 
-                      index={1} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                    <InputOTPSlot 
-                      index={2} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                    <InputOTPSlot 
-                      index={3} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                    <InputOTPSlot 
-                      index={4} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                    <InputOTPSlot 
-                      index={5} 
-                      className="w-12 h-12 text-2xl font-mono bg-game-bg border-game-border text-game-text" 
-                    />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-              
-              {expiresAt && (
-                <p className="text-center text-xs text-game-text-dim font-mono">
-                  Code expires in: {getTimeRemaining()}
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <Button
-                onClick={verifyCode}
-                className="w-full bg-perception hover:bg-perception/90 text-white font-mono"
-                disabled={isLoading || verificationCode.length !== 6}
-              >
-                {isLoading ? 'VERIFYING...' : 'VERIFY CODE'}
-              </Button>
-              
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    setCurrentScreen('enter-email');
-                    setVerificationCode('');
-                    setExpiresAt(null);
-                  }}
-                  variant="outline"
-                  className="flex-1 border-game-border text-game-text hover:bg-game-bg font-mono"
-                  disabled={isLoading}
-                >
-                  CHANGE EMAIL
-                </Button>
-                <Button
-                  onClick={sendVerificationCode}
-                  variant="outline"
-                  className="flex-1 border-perception text-perception hover:bg-perception/10 font-mono"
-                  disabled={isLoading || resendCooldown > 0}
-                >
-                  {resendCooldown > 0 ? `RESEND (${resendCooldown}s)` : 'RESEND CODE'}
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -382,4 +147,5 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
   }
 
   return null;
+
 };
