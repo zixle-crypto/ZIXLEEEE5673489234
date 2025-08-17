@@ -37,6 +37,7 @@ interface GameState {
   roomsCleared: number;
   score: number;
   totalShards: number;
+  shardsCollectedInCurrentRoom: number; // Track shards collected in current room
   startTime: number;
   roomStartTime: number;
   
@@ -113,6 +114,7 @@ export const useGameStore = create<GameStore>()(
       roomsCleared: 0,
       score: 0,
       totalShards: 0,
+      shardsCollectedInCurrentRoom: 0,
       startTime: Date.now(),
       roomStartTime: Date.now(),
       
@@ -149,6 +151,7 @@ export const useGameStore = create<GameStore>()(
           roomsCleared: 0,
           score: 0,
           totalShards: 0,
+          shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
           isPlaying: true,
@@ -242,10 +245,13 @@ export const useGameStore = create<GameStore>()(
           currentRoom: room,
           score: state.score + 100,
           totalShards: state.totalShards + shardsEarned,
+          shardsCollectedInCurrentRoom: state.shardsCollectedInCurrentRoom + 1, // Track shards in current room
         });
+        
+        console.log(`💎 Collected shard! Earned ${shardsEarned} shards (${state.shardsCollectedInCurrentRoom + 1} in this room)`);
       },
 
-      playerDie: () => {
+      playerDie: async () => {
         const state = get();
         
         // Check if player has protection
@@ -259,6 +265,38 @@ export const useGameStore = create<GameStore>()(
           });
           console.log('🛡️ Protection saved you! Remaining:', state.activePowerUps.protection - 1);
           return;
+        }
+        
+        // Save any shards collected in current room before dying
+        if (state.shardsCollectedInCurrentRoom && state.shardsCollectedInCurrentRoom > 0) {
+          const currentRoomNumber = state.roomsCleared + 1;
+          const completionTime = Math.floor((Date.now() - state.roomStartTime) / 1000);
+          
+          console.log(`💀 Player died but saving ${state.shardsCollectedInCurrentRoom} shards from room ${currentRoomNumber}`);
+          
+          try {
+            // Call the complete-room edge function to save collected shards
+            const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
+              body: {
+                roomNumber: currentRoomNumber,
+                currentScore: state.score,
+                shardsCollected: state.shardsCollectedInCurrentRoom,
+                completionTime: completionTime
+              }
+            });
+
+            if (error) {
+              console.error('Error saving shards on death:', error);
+            } else if (roomCompletionData?.success) {
+              console.log('💾 Shards saved on death:', roomCompletionData);
+              toast({
+                title: "Progress Saved",
+                description: `${state.shardsCollectedInCurrentRoom} shards saved despite death!`,
+              });
+            }
+          } catch (error) {
+            console.error('Failed to save shards on death:', error);
+          }
         }
         
         set({
@@ -293,6 +331,7 @@ export const useGameStore = create<GameStore>()(
           roomsCleared: 0,
           score: 0,
           totalShards: 0,
+          shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
           isPlaying: true,
@@ -401,6 +440,7 @@ export const useGameStore = create<GameStore>()(
           currentRoom: newRoom,
           roomsCleared: state.roomsCleared + 1,
           score: state.score + 500, // Bonus for completing room
+          shardsCollectedInCurrentRoom: 0, // Reset for new room
           roomStartTime: Date.now(), // Reset timer for next room
         });
         
