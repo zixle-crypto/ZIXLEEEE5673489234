@@ -38,23 +38,46 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
+    console.log('Starting Google OAuth flow...');
+    
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = `${window.location.origin}`;
+      console.log('Redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
         }
       });
       
-      if (error) throw error;
+      console.log('OAuth response:', { data, error });
+      
+      if (error) {
+        console.error('Google OAuth error details:', error);
+        throw error;
+      }
+      
+      if (data?.url) {
+        console.log('Redirecting to:', data.url);
+        // Force redirect using window.location to avoid iframe issues
+        window.location.href = data.url;
+        return;
+      }
+      
     } catch (error: any) {
+      console.error('Google sign-in failed:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "Please try again";
+      if (error.message?.includes('frame')) {
+        errorMessage = "OAuth provider configuration issue. Please check your settings.";
+      }
+      
       toast({
         title: "Sign in failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
       setIsLoading(false);
@@ -63,19 +86,45 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGitHub = async () => {
     setIsLoading(true);
+    console.log('Starting GitHub OAuth flow...');
+    
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = `${window.location.origin}`;
+      console.log('Redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
         }
       });
       
-      if (error) throw error;
+      console.log('GitHub OAuth response:', { data, error });
+      
+      if (error) {
+        console.error('GitHub OAuth error details:', error);
+        throw error;
+      }
+      
+      if (data?.url) {
+        console.log('Redirecting to:', data.url);
+        // Force redirect using window.location to avoid iframe issues
+        window.location.href = data.url;
+        return;
+      }
+      
     } catch (error: any) {
+      console.error('GitHub sign-in failed:', error);
+      
+      let errorMessage = error.message || "Please try again";
+      if (error.message?.includes('frame')) {
+        errorMessage = "OAuth provider configuration issue. Please check your settings.";
+      }
+      
       toast({
         title: "Sign in failed", 
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
       setIsLoading(false);
