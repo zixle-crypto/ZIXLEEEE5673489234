@@ -58,11 +58,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Room completion for user ${userEmail}: Room ${roomNumber}, Score: ${currentScore}, Shards: ${shardsCollected}, Time: ${completionTime}s`);
 
     // Basic anti-abuse: limit rewards based on reasonable completion times
-    const minCompletionTime = Math.max(10, roomNumber * 2); // Minimum reasonable time
+    const minCompletionTime = Math.max(5, roomNumber * 1); // More reasonable minimum time
     const maxRewardableTime = roomNumber * 30; // Maximum time for full rewards
     
     if (completionTime && completionTime < minCompletionTime) {
-      console.warn(`Suspicious completion time for user ${userId}: ${completionTime}s for room ${roomNumber}`);
+      console.error(`Suspicious completion time for user ${userId}: ${completionTime}s for room ${roomNumber}`);
       return new Response(JSON.stringify({ error: 'Invalid completion time' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
