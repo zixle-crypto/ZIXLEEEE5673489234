@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 export const GameHUD = () => {
   const {
     score,
+    totalShards,
     roomsCleared,
     weeklySeed,
     isPlaying,
@@ -31,14 +32,28 @@ export const GameHUD = () => {
     <div className="absolute inset-0 pointer-events-none font-mono">
       {/* Top HUD Bar */}
       <div className="flex justify-between items-start p-4">
-        {/* Left: Score */}
-        <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
-          <div className="flex flex-col gap-1">
-            <div className="text-perception text-sm font-mono">
-              SCORE
+        {/* Left: Score & Shards */}
+        <div className="flex flex-col gap-2">
+          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+            <div className="flex flex-col gap-1">
+              <div className="text-perception text-sm font-mono">
+                SCORE
+              </div>
+              <div className="text-game-text text-lg font-bold">
+                {score.toLocaleString()}
+              </div>
             </div>
-            <div className="text-game-text text-lg font-bold">
-              {score.toLocaleString()}
+          </div>
+          
+          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+            <div className="flex items-center gap-2">
+              <span className="text-perception text-lg">⬟</span>
+              <div className="flex flex-col">
+                <div className="text-perception text-sm font-mono">SHARDS</div>
+                <div className="text-game-text text-lg font-bold">
+                  {totalShards.toLocaleString()}
+                </div>
+              </div>
             </div>
           </div>
         </div>
