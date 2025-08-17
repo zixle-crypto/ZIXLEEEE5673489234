@@ -385,7 +385,7 @@ export const useGameStore = create<GameStore>()(
         }
         
         // Create next room and advance game state
-        const newRoom = createInitialRoom(Math.min(nextRoomNumber, 100));
+        const newRoom = createInitialRoom(nextRoomNumber); // Support unlimited rooms
         const newPlayer = createInitialPlayer();
         
         // Position player at spawn point
