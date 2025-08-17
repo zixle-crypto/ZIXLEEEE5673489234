@@ -179,6 +179,7 @@ export type Database = {
           active_shard_multiplier: number
           active_speed_boost: number
           created_at: string
+          equipped_cube_id: string | null
           id: string
           protection_rooms_left: number
           shard_multiplier_rooms_left: number
@@ -192,6 +193,7 @@ export type Database = {
           active_shard_multiplier?: number
           active_speed_boost?: number
           created_at?: string
+          equipped_cube_id?: string | null
           id?: string
           protection_rooms_left?: number
           shard_multiplier_rooms_left?: number
@@ -205,6 +207,7 @@ export type Database = {
           active_shard_multiplier?: number
           active_speed_boost?: number
           created_at?: string
+          equipped_cube_id?: string | null
           id?: string
           protection_rooms_left?: number
           shard_multiplier_rooms_left?: number

@@ -4,6 +4,7 @@
 
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/stores/gameStore';
+import { useUserDataStore } from '@/stores/userDataStore';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -28,6 +29,8 @@ export const GameCanvas = () => {
     playerDie
   } = useGameStore();
 
+  const { gameData } = useUserDataStore();
+
   // Handle keyboard input
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     keysRef.current.add(e.code);
@@ -49,6 +52,25 @@ export const GameCanvas = () => {
     const y = e.clientY - rect.top;
     updateCursor(x, y);
   }, [updateCursor]);
+
+  // Get equipped cube color
+  const getEquippedCubeColor = () => {
+    if (!gameData?.equipped_cube_id) return '#20d4d4'; // Default cyan
+    
+    const cubeId = gameData.equipped_cube_id;
+    if (cubeId.includes('copper')) return '#B87333';
+    if (cubeId.includes('bronze')) return '#CD7F32'; 
+    if (cubeId.includes('silver')) return '#C0C0C0';
+    if (cubeId.includes('emerald')) return '#50C878';
+    if (cubeId.includes('golden')) return '#FFD700';
+    if (cubeId.includes('diamond')) return '#B9F2FF';
+    if (cubeId.includes('ruby')) return '#E0115F';
+    if (cubeId.includes('sapphire')) return '#0F52BA';
+    if (cubeId.includes('prismatic')) return '#FF6B9D';
+    if (cubeId.includes('void')) return '#2D1B69';
+    
+    return '#20d4d4'; // Default
+  };
 
   // Render function - clean with no console spam
   const render = useCallback(() => {
@@ -80,13 +102,20 @@ export const GameCanvas = () => {
     const playerW = player?.width ?? 24;
     const playerH = player?.height ?? 24;
     const playerAlive = player?.alive ?? true;
+    const cubeColor = getEquippedCubeColor();
     
-    ctx.fillStyle = playerAlive ? '#20d4d4' : '#ef4444';
+    // Draw equipped cube as player appearance
+    ctx.fillStyle = playerAlive ? cubeColor : '#ef4444';
     ctx.fillRect(playerX, playerY, playerW, playerH);
     
-    // Player glow
+    // Add cube border/outline effect
+    ctx.strokeStyle = playerAlive ? cubeColor : '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(playerX, playerY, playerW, playerH);
+    
+    // Player glow (using cube color)
     if (playerAlive) {
-      ctx.shadowColor = '#20d4d4';
+      ctx.shadowColor = cubeColor;
       ctx.shadowBlur = 10;
       ctx.fillRect(playerX, playerY, playerW, playerH);
       ctx.shadowBlur = 0;
@@ -139,7 +168,7 @@ export const GameCanvas = () => {
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  }, [player, currentRoom, cursor, isPlaying, isGameOver]);
+  }, [player, currentRoom, cursor, isPlaying, isGameOver, gameData]);
 
   // Game loop - clean with no console spam
   const gameLoop = useCallback((currentTime: number) => {
