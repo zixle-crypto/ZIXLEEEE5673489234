@@ -22,7 +22,7 @@ type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'invento
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
-  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory } = useUserDataStore();
+  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -164,8 +164,23 @@ export const CleanPerceptionShift = () => {
   };
 
   const handleShopPurchase = async (itemId: string, cost: number) => {
-    await updateShards(-cost);
-    await addCubeToInventory(itemId);
+    try {
+      console.log('💰 Purchasing cube:', itemId, 'for', cost, 'shards');
+      
+      // Get the functions from user data store
+      const { updateShards, addCubeToInventory } = useUserDataStore.getState();
+      
+      // Deduct shards and add cube to inventory
+      await updateShards(-cost);
+      await addCubeToInventory(itemId);
+      
+      console.log('✅ Purchase successful!');
+      
+      // Force reload user data to update the display
+      await loadUserData();
+    } catch (error) {
+      console.error('❌ Purchase failed:', error);
+    }
   };
 
   // Show loading state while checking auth
