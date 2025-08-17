@@ -241,15 +241,8 @@ export const CleanPerceptionShift = () => {
       {/* Header with Game Title and Stats */}
       <div className="text-center mb-6 w-full max-w-4xl">
         <div className="flex items-center justify-between mb-4">
-          {/* Player Stats */}
+          {/* Player Stats - Remove duplicate shard display since it's now in game HUD */}
           <div className="flex items-center gap-4">
-            <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-perception" />
-                <span className="text-perception font-bold">{isGuest ? 0 : (gameData?.total_shards || 0)}</span>
-                <span className="text-game-text-dim text-sm">⬟ Shards</span>
-              </div>
-            </div>
             {currentRank && (
               <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
                 <div className="flex items-center gap-2">
