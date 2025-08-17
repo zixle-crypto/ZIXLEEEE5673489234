@@ -29,17 +29,23 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardEntry | null>(null);
 
   useEffect(() => {
-    if (isVisible && currentUser) {
+    if (isVisible) {
       fetchLeaderboard();
+      // Auto-refresh every 30 seconds when leaderboard is visible
+      const refreshInterval = setInterval(fetchLeaderboard, 30000);
+      return () => clearInterval(refreshInterval);
     }
-  }, [isVisible, currentUser]);
+  }, [isVisible]);
 
   const fetchLeaderboard = async () => {
     setIsLoading(true);
     try {
+      // Get current user for authenticated requests, but also show leaderboard for guests
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .rpc('get_leaderboard_with_context', {
-          p_user_id: currentUser?.id || null
+          p_user_id: user?.id || null
         });
 
       if (error) {
@@ -52,11 +58,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isVisible, onClose, cu
         return;
       }
 
+      console.log('📊 Leaderboard data loaded:', data?.length, 'entries');
       setLeaderboardData(data || []);
       
       // Find current user's entry
       const userEntry = data?.find(entry => entry.is_current_user);
       setCurrentUserRank(userEntry || null);
+      
+      if (userEntry) {
+        console.log('👤 Current user rank:', userEntry.rank, 'with', userEntry.total_shards, 'shards');
+      }
       
     } catch (error) {
       console.error('Error:', error);
