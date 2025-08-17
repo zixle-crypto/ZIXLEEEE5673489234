@@ -343,6 +343,8 @@ export const useGameStore = create<GameStore>()(
         console.log(`🚪 Completing room ${currentRoomNumber} with ${shardsCollected}/${initialShardCount} shards in ${completionTime}s`);
         
         try {
+          console.log('🏁 Calling complete-room function...');
+          
           // Call the complete-room edge function to update leaderboard
           const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
             body: {
@@ -352,6 +354,8 @@ export const useGameStore = create<GameStore>()(
               completionTime: completionTime
             }
           });
+
+          console.log('🏁 Function response:', { data: roomCompletionData, error });
 
           if (error) {
             console.error('Error completing room:', error);

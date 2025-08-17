@@ -36,16 +36,23 @@ const handler = async (req: Request): Promise<Response> => {
     // Try to get authenticated user, but don't require it
     const authHeader = req.headers.get('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const anonSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
-      const jwt = authHeader.split(' ')[1];
-      const { data: { user }, error: userError } = await anonSupabase.auth.getUser(jwt);
-      
-      if (user && !userError) {
-        userEmail = user.email || userEmail;
-        userId = user.id;
-      } else {
-        console.log('Using guest user for demo');
+      try {
+        const anonSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+        const jwt = authHeader.split(' ')[1];
+        const { data: { user }, error: userError } = await anonSupabase.auth.getUser(jwt);
+        
+        if (user && !userError) {
+          userEmail = user.email || userEmail;
+          userId = user.id;
+          console.log(`Authenticated user: ${userEmail}`);
+        } else {
+          console.log('Auth failed, using guest user:', userError?.message);
+        }
+      } catch (authError) {
+        console.log('Auth error, using guest user:', authError);
       }
+    } else {
+      console.log('No auth header, using guest user');
     }
 
     console.log(`Room completion for user ${userEmail}: Room ${roomNumber}, Score: ${currentScore}, Shards: ${shardsCollected}, Time: ${completionTime}s`);
