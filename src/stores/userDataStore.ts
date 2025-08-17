@@ -15,6 +15,7 @@ export interface UserGameData {
   shard_multiplier_rooms_left: number;
   speed_boost_rooms_left: number;
   protection_rooms_left: number;
+  equipped_cube_id?: string; // New field for equipped cube
 }
 
 export interface UserInventoryItem {
@@ -39,7 +40,7 @@ interface UserDataStore extends UserDataState {
   loadUserData: () => Promise<void>;
   updateShards: (amount: number) => Promise<void>;
   addCubeToInventory: (cubeId: string, quantity?: number) => Promise<void>;
-  updatePowerUps: (powerUps: Partial<Pick<UserGameData, 'active_shard_multiplier' | 'active_speed_boost' | 'active_protection' | 'shard_multiplier_rooms_left' | 'speed_boost_rooms_left' | 'protection_rooms_left'>>) => Promise<void>;
+  updatePowerUps: (powerUps: Partial<Pick<UserGameData, 'active_shard_multiplier' | 'active_speed_boost' | 'active_protection' | 'shard_multiplier_rooms_left' | 'speed_boost_rooms_left' | 'protection_rooms_left' | 'equipped_cube_id'>>) => Promise<void>;
   clearUserData: () => void;
 }
 
