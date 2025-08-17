@@ -267,7 +267,7 @@ export const useGameStore = create<GameStore>()(
           return;
         }
         
-        // Save any shards collected in current room before dying
+        // Save any shards collected in current room before dying (only for authenticated users)
         if (state.shardsCollectedInCurrentRoom && state.shardsCollectedInCurrentRoom > 0) {
           const currentRoomNumber = state.roomsCleared + 1;
           const completionTime = Math.floor((Date.now() - state.roomStartTime) / 1000);
@@ -275,24 +275,27 @@ export const useGameStore = create<GameStore>()(
           console.log(`💀 Player died but saving ${state.shardsCollectedInCurrentRoom} shards from room ${currentRoomNumber}`);
           
           try {
-            // Call the complete-room edge function to save collected shards
-            const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
-              body: {
-                roomNumber: currentRoomNumber,
-                currentScore: state.score,
-                shardsCollected: state.shardsCollectedInCurrentRoom,
-                completionTime: completionTime
-              }
-            });
-
-            if (error) {
-              console.error('Error saving shards on death:', error);
-            } else if (roomCompletionData?.success) {
-              console.log('💾 Shards saved on death:', roomCompletionData);
-              toast({
-                title: "Progress Saved",
-                description: `${state.shardsCollectedInCurrentRoom} shards saved despite death!`,
+            // Check if user is authenticated (not guest)
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+              // Only save for authenticated users
+              const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
+                body: {
+                  roomNumber: currentRoomNumber,
+                  currentScore: state.score,
+                  shardsCollected: state.shardsCollectedInCurrentRoom,
+                  completionTime: completionTime
+                }
               });
+
+              if (error) {
+                console.error('Error saving shards on death:', error);
+              } else if (roomCompletionData?.success) {
+                console.log('💾 Shards saved on death:', roomCompletionData);
+              }
+            } else {
+              console.log('🚫 Guest user - shards not saved to leaderboard');
             }
           } catch (error) {
             console.error('Failed to save shards on death:', error);
