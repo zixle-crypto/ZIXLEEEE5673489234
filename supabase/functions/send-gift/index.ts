@@ -21,7 +21,7 @@ interface SendGiftRequest {
   message?: string;
 }
 
-const resend = new Resend(resendApiKey);
+
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -126,6 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email notification (only for email recipients)
     if (recipientType === 'email') {
       try {
+        const resend = new Resend(resendApiKey);
         const claimUrl = `${supabaseUrl.replace('//', '//').replace('/rest/v1', '')}/claim-gift?id=${giftId}`;
         
         const emailHtml = `
