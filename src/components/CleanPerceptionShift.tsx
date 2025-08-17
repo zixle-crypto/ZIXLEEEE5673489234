@@ -174,6 +174,12 @@ export const CleanPerceptionShift = () => {
       await updateShards(-cost);
       await addCubeToInventory(itemId);
       
+      // Also update the game store shards to sync the UI
+      const { totalShards: currentGameShards } = useGameStore.getState();
+      useGameStore.setState({ 
+        totalShards: Math.max(0, currentGameShards - cost) 
+      });
+      
       console.log('✅ Purchase successful!');
       
       // Force reload user data to update the display
