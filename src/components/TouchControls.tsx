@@ -40,7 +40,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
     const deltaY = clientY - centerY;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    const maxDistance = rect.width / 2 - 20; // Account for knob size
+    const maxDistance = rect.width / 2 - 24; // Account for larger knob size
     const limitedDistance = Math.min(distance, maxDistance);
 
     let finalX = deltaX;
@@ -53,8 +53,8 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
 
     knobRef.current.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
 
-    // Determine movement direction
-    const threshold = maxDistance * 0.3;
+    // Determine movement direction with lower threshold for easier control
+    const threshold = maxDistance * 0.25; // Reduced from 0.3 to 0.25 for more responsive controls
     const newMovement = {
       left: finalX < -threshold,
       right: finalX > threshold,
@@ -106,7 +106,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
 
   return (
     <>
-      {/* Touch area for cursor movement */}
+      {/* Touch area for cursor movement - improved with better visual feedback */}
       <div
         className="absolute inset-0 pointer-events-auto"
         onTouchStart={handleScreenTouch}
@@ -121,12 +121,12 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         }}
       />
       
-      {/* Virtual Joystick */}
-      <div className="absolute bottom-8 left-8 z-50">
+      {/* Virtual Joystick - Larger and more responsive */}
+      <div className="absolute bottom-6 left-6 z-50">
         <div
           ref={joystickRef}
-          className={`relative w-24 h-24 rounded-full border-4 border-hud-border bg-hud-bg/80 transition-all duration-200 ${
-            isPressed ? 'scale-110 shadow-glow-attention' : 'shadow-shadow-game'
+          className={`relative w-32 h-32 rounded-full border-4 border-hud-border bg-hud-bg/90 transition-all duration-200 ${
+            isPressed ? 'scale-110 shadow-glow-attention border-perception' : 'shadow-shadow-game'
           }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -135,26 +135,40 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         >
           <div
             ref={knobRef}
-            className={`absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 ${
-              isPressed ? 'scale-110' : ''
+            className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 shadow-lg ${
+              isPressed ? 'scale-110 shadow-glow-attention' : 'shadow-shadow-game'
             }`}
             style={{ touchAction: 'none' }}
           />
           
-          {/* Direction indicators */}
+          {/* Direction indicators - Larger and clearer */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-game-text-dim text-xs">↑</div>
-            <div className="absolute left-2 top-1/2 transform -translate-y-1/2 text-game-text-dim text-xs">←</div>
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-game-text-dim text-xs">→</div>
+            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-game-text text-sm font-bold">↑</div>
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold">←</div>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold">→</div>
           </div>
+          
+          {/* Active direction feedback */}
+          {movement.up && (
+            <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+          )}
+          {movement.left && (
+            <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+          )}
+          {movement.right && (
+            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+          )}
         </div>
         
-        <div className="text-center mt-2 text-game-text-dim text-xs">Move</div>
+        <div className="text-center mt-2 text-game-text text-sm font-bold">MOVE</div>
       </div>
 
-      {/* Instructions overlay */}
-      <div className="absolute top-4 left-4 right-4 text-center text-game-text-dim text-sm bg-hud-bg/60 backdrop-blur-sm rounded-lg p-2 border border-hud-border">
-        <div>Touch screen to move cursor • Use joystick to move player</div>
+      {/* Improved instructions overlay with better positioning */}
+      <div className="absolute top-4 left-4 right-4 text-center bg-hud-bg/80 backdrop-blur-sm rounded-lg p-3 border border-hud-border z-40">
+        <div className="text-game-text text-sm font-bold mb-1">MOBILE CONTROLS</div>
+        <div className="text-game-text-dim text-xs">
+          <span className="text-perception">Touch screen</span> to aim cursor • <span className="text-perception">Use joystick</span> to move & jump
+        </div>
       </div>
     </>
   );
