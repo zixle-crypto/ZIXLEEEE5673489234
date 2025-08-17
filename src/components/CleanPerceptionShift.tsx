@@ -32,6 +32,7 @@ export const CleanPerceptionShift = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [guestDeviceSelection, setGuestDeviceSelection] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -168,9 +169,27 @@ export const CleanPerceptionShift = () => {
       console.log('✅ Guest mode activated');
       setIsGuest(true);
       setCurrentScreen('menu');
+      
+      // Check if guest has device preference, if not show selection
+      const guestDevicePreference = localStorage.getItem('guestDevicePreference');
+      if (!guestDevicePreference) {
+        setGuestDeviceSelection(true);
+      }
     } else {
       // Regular authenticated user flow
       setCurrentScreen('menu');
+    }
+  };
+
+  // Handle device selection for both authenticated and guest users
+  const handleDeviceSelection = async (deviceType: 'desktop' | 'mobile' | 'tablet') => {
+    if (isGuest) {
+      // Store guest device preference in localStorage
+      localStorage.setItem('guestDevicePreference', deviceType);
+      setGuestDeviceSelection(false);
+    } else {
+      // Use the store method for authenticated users
+      await setDevicePreference(deviceType);
     }
   };
 
@@ -328,10 +347,10 @@ export const CleanPerceptionShift = () => {
         </p>
       </div>
 
-      {/* Device Selection Modal */}
+      {/* Device Selection Modal - Show for both authenticated and guest users */}
       <DeviceSelectionModal
-        isOpen={showDeviceSelection}
-        onDeviceSelect={setDevicePreference}
+        isOpen={showDeviceSelection || guestDeviceSelection}
+        onDeviceSelect={handleDeviceSelection}
       />
     </div>
   );
