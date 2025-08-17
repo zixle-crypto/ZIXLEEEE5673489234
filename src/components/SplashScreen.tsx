@@ -44,7 +44,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `https://perceptionshift.zixlestudios.com`,
+          redirectTo: window.location.origin,
           skipBrowserRedirect: true
         }
       });

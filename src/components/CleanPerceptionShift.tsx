@@ -148,16 +148,28 @@ export const CleanPerceptionShift = () => {
       if (!mounted) return;
       
       console.log('🔍 Initial session check:', session?.user?.email || 'No user');
+      console.log('🔍 Session details:', session);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         console.log('👤 Existing session found for:', session.user.email);
+        console.log('🔄 Setting user data from existing session...');
         setUserData(session.user);
+        
+        // Force show device selection for authenticated users
+        console.log('🎯 Forcing device selection from existing session...');
+        setTimeout(() => {
+          console.log('⏰ Device selection timeout from existing session');
+          setShowDeviceSelection(true);
+        }, 1000);
       } else {
         console.log('🚫 No existing session found');
       }
       
+      setLoading(false);
+    }).catch(error => {
+      console.error('❌ Error checking session:', error);
       setLoading(false);
     });
 
