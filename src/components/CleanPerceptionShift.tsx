@@ -377,11 +377,55 @@ export const CleanPerceptionShift = () => {
         </div>
       </div>
 
-      {/* Instructions - Responsive */}
-      <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto font-mono px-4">
-        <p className="hidden md:block">Move with WASD or arrow keys • Jump with W/Up/Space • Collect golden shards for currency</p>
-        <p className="block md:hidden">Touch screen to aim • Use joystick to move and jump • Collect golden shards</p>
-        <p className="mt-2 text-perception text-xs">
+      {/* Controls Instructions - Prominent and Easy */}
+      <div className="mt-4 space-y-3 text-center max-w-2xl mx-auto px-4">
+        {/* Desktop Controls */}
+        <div className="hidden md:block bg-game-surface/80 border border-game-border rounded-lg p-4">
+          <h3 className="text-perception font-bold text-lg mb-3 font-mono">HOW TO PLAY</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">MOVE:</span>
+                <span className="text-game-text">WASD or Arrow Keys</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">JUMP:</span>
+                <span className="text-game-text">W, ↑, or Space</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">AIM:</span>
+                <span className="text-game-text">Move Mouse</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">GOAL:</span>
+                <span className="text-game-text">Collect ⬟ Shards</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Controls */}
+        <div className="block md:hidden bg-game-surface/80 border border-game-border rounded-lg p-4">
+          <h3 className="text-perception font-bold text-lg mb-3 font-mono">HOW TO PLAY</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">MOVE & JUMP:</span>
+              <span className="text-game-text">Use Joystick (Bottom Left)</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">AIM CURSOR:</span>
+              <span className="text-game-text">Touch Anywhere on Screen</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">GOAL:</span>
+              <span className="text-game-text">Collect ⬟ Golden Shards</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-perception text-sm font-mono animate-pulse">
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
