@@ -27,6 +27,7 @@ export const CleanPerceptionShift = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -151,8 +152,15 @@ export const CleanPerceptionShift = () => {
 
   const handleUserComplete = (userEmail: string) => {
     console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);
-    // Force navigation to menu immediately
-    setCurrentScreen('menu');
+    
+    if (userEmail === 'guest') {
+      console.log('✅ Guest mode activated');
+      setIsGuest(true);
+      setCurrentScreen('menu');
+    } else {
+      // Regular authenticated user flow
+      setCurrentScreen('menu');
+    }
   };
 
   const handleShopPurchase = async (itemId: string, cost: number) => {
@@ -174,8 +182,8 @@ export const CleanPerceptionShift = () => {
     );
   }
 
-  // If not authenticated, always show splash screen for sign in
-  if (!user) {
+  // If not authenticated and not guest, show splash screen for sign in
+  if (!user && !isGuest) {
     return <SplashScreen onComplete={handleUserComplete} user={user} />;
   }
 
@@ -183,7 +191,7 @@ export const CleanPerceptionShift = () => {
     return <SplashScreen onComplete={handleUserComplete} user={user} />;
   }
 
-  // Show main menu only if authenticated
+  // Show main menu for authenticated users or guests
   if (currentScreen === 'menu') {
     return (
       <MainMenu
@@ -191,7 +199,7 @@ export const CleanPerceptionShift = () => {
         onLeaderboard={() => setCurrentScreen('leaderboard')}
         onShop={() => setCurrentScreen('shop')}
         onInventory={() => setCurrentScreen('inventory')}
-        totalShards={gameData?.total_shards || 0}
+        totalShards={isGuest ? 0 : (gameData?.total_shards || 0)}
       />
     );
   }
@@ -238,7 +246,7 @@ export const CleanPerceptionShift = () => {
             <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-perception" />
-                <span className="text-perception font-bold">{gameData?.total_shards || 0}</span>
+                <span className="text-perception font-bold">{isGuest ? 0 : (gameData?.total_shards || 0)}</span>
                 <span className="text-game-text-dim text-sm">⬟ Shards</span>
               </div>
             </div>
