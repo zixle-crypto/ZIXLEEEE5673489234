@@ -38,25 +38,52 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
-    console.log('🚀 Starting Google OAuth with full page redirect...');
+    console.log('🚀 Starting Google OAuth with popup...');
     
     try {
-      // Force full page navigation to avoid any iframe embedding
-      const redirectUrl = window.location.origin;
-      console.log('🔗 Redirect URL:', redirectUrl);
-      
-      // Immediately redirect to Supabase OAuth URL without waiting
-      const authUrl = `https://ihvnriqsrdhayysfcywm.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
-      console.log('🌐 Redirecting directly to:', authUrl);
-      
-      // Use top-level window navigation to ensure no iframe issues
-      window.top!.location.href = authUrl;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+          skipBrowserRedirect: true
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('🌐 Opening OAuth popup:', data.url);
+        // Open OAuth in a popup window to bypass sandbox restrictions
+        const popup = window.open(
+          data.url,
+          'oauth-popup',
+          'width=500,height=600,scrollbars=yes,resizable=yes'
+        );
+
+        // Listen for auth state changes
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            console.log('✅ OAuth successful');
+            popup?.close();
+            setIsLoading(false);
+            if (session.user?.email) {
+              onComplete(session.user.email);
+            }
+          }
+        });
+
+        // Clean up listener after 5 minutes
+        setTimeout(() => {
+          authListener.subscription.unsubscribe();
+          setIsLoading(false);
+        }, 300000);
+      }
       
     } catch (error: any) {
       console.error('❌ Google sign-in failed:', error);
       toast({
         title: "Sign in failed",
-        description: "Authentication error. Please try again.",
+        description: "Please try again or use guest mode.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -65,25 +92,52 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGitHub = async () => {
     setIsLoading(true);
-    console.log('🚀 Starting GitHub OAuth with full page redirect...');
+    console.log('🚀 Starting GitHub OAuth with popup...');
     
     try {
-      // Force full page navigation to avoid any iframe embedding
-      const redirectUrl = window.location.origin;
-      console.log('🔗 Redirect URL:', redirectUrl);
-      
-      // Immediately redirect to Supabase OAuth URL without waiting
-      const authUrl = `https://ihvnriqsrdhayysfcywm.supabase.co/auth/v1/authorize?provider=github&redirect_to=${encodeURIComponent(redirectUrl)}`;
-      console.log('🌐 Redirecting directly to:', authUrl);
-      
-      // Use top-level window navigation to ensure no iframe issues
-      window.top!.location.href = authUrl;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}`,
+          skipBrowserRedirect: true
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('🌐 Opening OAuth popup:', data.url);
+        // Open OAuth in a popup window to bypass sandbox restrictions
+        const popup = window.open(
+          data.url,
+          'oauth-popup',
+          'width=500,height=600,scrollbars=yes,resizable=yes'
+        );
+
+        // Listen for auth state changes
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            console.log('✅ OAuth successful');
+            popup?.close();
+            setIsLoading(false);
+            if (session.user?.email) {
+              onComplete(session.user.email);
+            }
+          }
+        });
+
+        // Clean up listener after 5 minutes
+        setTimeout(() => {
+          authListener.subscription.unsubscribe();
+          setIsLoading(false);
+        }, 300000);
+      }
       
     } catch (error: any) {
       console.error('❌ GitHub sign-in failed:', error);
       toast({
         title: "Sign in failed", 
-        description: "Authentication error. Please try again.",
+        description: "Please try again or use guest mode.",
         variant: "destructive"
       });
       setIsLoading(false);
