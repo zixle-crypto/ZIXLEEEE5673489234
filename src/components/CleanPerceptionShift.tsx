@@ -44,7 +44,10 @@ export const CleanPerceptionShift = () => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('🔔 Auth state change:', event, 'User:', session?.user?.email);
+        console.log('🔔 Auth state change EVENT:', event);
+        console.log('🔔 Auth state change SESSION:', session);
+        console.log('🔔 Auth state change USER:', session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -57,14 +60,17 @@ export const CleanPerceptionShift = () => {
         
         // Auto-sync user data when authenticated
         if (session?.user) {
-          console.log('✅ User authenticated:', session.user.email);
+          console.log('✅ User authenticated in auth state change:', session.user.email);
           console.log('📋 User ID:', session.user.id);
+          console.log('🔄 Setting user in store...');
           
           // Give the user data store the authenticated user
           setUserData(session.user);
           
-          // Force show device selection for testing - remove this later
+          // Force show device selection for all authenticated users (temporary for debugging)
+          console.log('🎯 Forcing device selection modal to show...');
           setTimeout(() => {
+            console.log('⏰ Timeout triggered - setting device selection to true');
             setShowDeviceSelection(true);
           }, 500);
           
@@ -249,7 +255,12 @@ export const CleanPerceptionShift = () => {
 
   // Show main menu for authenticated users or guests
   if (currentScreen === 'menu') {
-    console.log('🔍 Device modal debug:', { showDeviceSelection, guestDeviceSelection, user: !!user, isGuest });
+    console.log('🔍 MENU SCREEN Debug:');
+    console.log('  - showDeviceSelection:', showDeviceSelection);
+    console.log('  - guestDeviceSelection:', guestDeviceSelection);
+    console.log('  - user exists:', !!user);
+    console.log('  - isGuest:', isGuest);
+    console.log('  - user email:', user?.email);
     
     return (
       <>

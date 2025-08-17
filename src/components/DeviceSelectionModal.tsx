@@ -36,6 +36,8 @@ export const DeviceSelectionModal: React.FC<DeviceSelectionModalProps> = ({
     }
   ];
 
+  console.log('📱 DeviceSelectionModal render - isOpen:', isOpen);
+  
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-2xl bg-game-surface border-game-border">
