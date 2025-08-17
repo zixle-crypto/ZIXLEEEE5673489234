@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Clock, Sparkles, Zap, Shield, Star, Box, Gem, Gift } from 'lucide-react';
 import { useShopStore, type CubeItem } from '@/stores/shopStore';
 import { GiftModal } from '@/components/GiftModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ShopProps {
   onBack: () => void;
@@ -127,10 +129,52 @@ export const Shop: React.FC<ShopProps> = ({
   const handleGiftSend = async (recipient: string, message: string) => {
     if (!selectedGiftItem) return;
     
-    // Add gift logic here - will implement edge function
-    console.log('Sending gift:', selectedGiftItem.name, 'to:', recipient, 'message:', message);
-    setIsGiftModalOpen(false);
-    setSelectedGiftItem(null);
+    try {
+      console.log('🎁 Sending gift:', selectedGiftItem.name, 'to:', recipient);
+      
+      const { data: giftResult, error } = await supabase.functions.invoke('send-gift', {
+        body: {
+          cubeId: selectedGiftItem.id,
+          cubeName: selectedGiftItem.name,
+          cubeCost: selectedGiftItem.cost,
+          recipient: recipient,
+          recipientType: recipient.includes('@') ? 'email' : 'github',
+          message: message
+        }
+      });
+
+      if (error) {
+        console.error('Gift sending failed:', error);
+        toast({
+          title: "Gift Failed",
+          description: error.message || "Failed to send gift",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Gift sent successfully:', giftResult);
+      toast({
+        title: "Gift Sent! 🎁",
+        description: `${selectedGiftItem.name} sent to ${recipient}!`,
+      });
+
+      // Update local shard count immediately
+      if (onPurchase) {
+        onPurchase(selectedGiftItem.id, selectedGiftItem.cost);
+      }
+      
+    } catch (error) {
+      console.error('Gift error:', error);
+      toast({
+        title: "Gift Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGiftModalOpen(false);
+      setSelectedGiftItem(null);
+    }
   };
 
   return (
