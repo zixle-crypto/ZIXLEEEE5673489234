@@ -369,17 +369,18 @@ export const CleanPerceptionShift = () => {
         </div>
       </div>
 
-      {/* Game Container */}
-      <div className="relative bg-game-surface border border-game-border rounded-lg p-4 shadow-2xl">
-        <div style={{ width: '800px', height: '600px', position: 'relative' }}>
+      {/* Game Container - Responsive */}
+      <div className="relative bg-game-surface border border-game-border rounded-lg p-2 md:p-4 shadow-2xl w-full max-w-6xl">
+        <div className="w-full aspect-[4/3] max-w-[800px] max-h-[600px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto font-mono">
-        <p>Move with WASD or arrow keys • Jump with W/Up/Space • Collect golden shards for currency</p>
+      {/* Instructions - Responsive */}
+      <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto font-mono px-4">
+        <p className="hidden md:block">Move with WASD or arrow keys • Jump with W/Up/Space • Collect golden shards for currency</p>
+        <p className="block md:hidden">Touch screen to aim • Use joystick to move and jump • Collect golden shards</p>
         <p className="mt-2 text-perception text-xs">
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
