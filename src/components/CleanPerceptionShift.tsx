@@ -63,6 +63,11 @@ export const CleanPerceptionShift = () => {
           // Give the user data store the authenticated user
           setUserData(session.user);
           
+          // Force show device selection for testing - remove this later
+          setTimeout(() => {
+            setShowDeviceSelection(true);
+          }, 500);
+          
           // Auto-navigate to menu after successful auth, with a small delay
           setTimeout(() => {
             if (currentScreen === 'splash') {
