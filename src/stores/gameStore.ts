@@ -144,13 +144,13 @@ export const useGameStore = create<GameStore>()(
         console.log('🎯 Player created at:', newPlayer.x, newPlayer.y);
         console.log('🔸 Room created with', newRoom.shards.length, 'shards');
         
-        set({
+        set((prevState) => ({
           player: newPlayer,
           currentRoom: newRoom,
           cursor: { x: 400, y: 300 }, // Center of canvas
           roomsCleared: 0,
           score: 0,
-          totalShards: 0,
+          totalShards: prevState.totalShards || 0, // Preserve existing shards
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
@@ -165,7 +165,7 @@ export const useGameStore = create<GameStore>()(
             speedBoost: 1,
             protection: 0,
           },
-        });
+        }));
         
         console.log('✅ Game initialized - isPlaying: true');
       },
@@ -327,13 +327,13 @@ export const useGameStore = create<GameStore>()(
         newPlayer.x = newRoom.spawn.x;
         newPlayer.y = newRoom.spawn.y;
         
-        set({
+        set((prevState) => ({
           player: newPlayer,
           currentRoom: newRoom,
           cursor: { x: 400, y: 300 },
           roomsCleared: 0,
           score: 0,
-          totalShards: 0,
+          totalShards: prevState.totalShards, // Preserve existing shards - NEVER reset them
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
@@ -348,7 +348,7 @@ export const useGameStore = create<GameStore>()(
             speedBoost: 1,
             protection: 0,
           },
-        });
+        }));
         
         console.log('✅ Game restarted successfully');
       },
@@ -470,6 +470,7 @@ export const useGameStore = create<GameStore>()(
       name: 'perception-shift-save',
       partialize: (state) => ({ 
         score: state.score,
+        totalShards: state.totalShards, // Persist total shards so they're never lost
         weeklySeed: state.weeklySeed
       }),
     }
