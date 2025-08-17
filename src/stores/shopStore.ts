@@ -49,7 +49,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'copper_cube',
     name: 'Copper Cube',
     description: 'Basic cube that gives 1.2x shard multiplier for 2 rooms',
-    cost: 100,
+    cost: 500,
     rarity: 'common',
     effect: { type: 'shard_multiplier', value: 1.2, duration: 2 }
   },
@@ -57,7 +57,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'bronze_cube',
     name: 'Bronze Cube', 
     description: 'Sturdy cube that provides protection for 1 room',
-    cost: 150,
+    cost: 750,
     rarity: 'common',
     effect: { type: 'protection', value: 1, duration: 1 }
   },
@@ -67,7 +67,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'silver_cube',
     name: 'Silver Cube',
     description: 'Shiny cube that gives 1.5x shard multiplier for 3 rooms',
-    cost: 300,
+    cost: 2500,
     rarity: 'rare',
     effect: { type: 'shard_multiplier', value: 1.5, duration: 3 }
   },
@@ -75,7 +75,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'emerald_cube',
     name: 'Emerald Cube',
     description: 'Speed-enhancing cube that boosts movement by 25% for 2 rooms',
-    cost: 400,
+    cost: 3500,
     rarity: 'rare',
     effect: { type: 'speed_boost', value: 1.25, duration: 2 }
   },
@@ -85,7 +85,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'golden_cube',
     name: 'Golden Cube',
     description: 'Precious cube that gives 2x shard multiplier for 4 rooms',
-    cost: 800,
+    cost: 12000,
     rarity: 'epic',
     effect: { type: 'shard_multiplier', value: 2.0, duration: 4 }
   },
@@ -93,7 +93,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'diamond_cube',
     name: 'Diamond Cube',
     description: 'Ultra-hard cube providing protection for 3 rooms',
-    cost: 1000,
+    cost: 15000,
     rarity: 'epic',
     effect: { type: 'protection', value: 1, duration: 3 }
   },
@@ -103,7 +103,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'ruby_cube',
     name: 'Ruby Cube',
     description: 'Legendary cube with 2.5x shard multiplier for 5 rooms',
-    cost: 2000,
+    cost: 35000,
     rarity: 'legendary',
     effect: { type: 'shard_multiplier', value: 2.5, duration: 5 }
   },
@@ -111,17 +111,17 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'sapphire_cube',
     name: 'Sapphire Cube',
     description: 'Legendary speed cube boosting movement by 50% for 3 rooms',
-    cost: 2500,
+    cost: 45000,
     rarity: 'legendary',
     effect: { type: 'speed_boost', value: 1.5, duration: 3 }
   },
   
-  // Prismatic cubes - Ultimate tier (1% spawn chance)
+  // Prismatic cubes - Ultimate end-game tier (1% spawn chance)
   {
     id: 'prismatic_cube',
     name: 'Prismatic Cube',
     description: 'Ultimate cube with 3x shard multiplier for 10 rooms',
-    cost: 5000,
+    cost: 100000,
     rarity: 'prismatic',
     effect: { type: 'shard_multiplier', value: 3.0, duration: 10 }
   },
@@ -129,7 +129,7 @@ const CUBE_TEMPLATES: Omit<CubeItem, 'inStock' | 'quantity'>[] = [
     id: 'void_cube',
     name: 'Void Cube',
     description: 'Mythical cube providing invulnerability for 5 rooms',
-    cost: 6000,
+    cost: 120000,
     rarity: 'prismatic',
     effect: { type: 'protection', value: 1, duration: 5 }
   }

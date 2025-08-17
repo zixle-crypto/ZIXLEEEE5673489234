@@ -33,7 +33,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'copper_cube',
       name: 'Copper Cube',
       description: 'Basic cube that gives 1.2x shard multiplier for 2 rooms',
-      cost: 100,
+      cost: 500,
       rarity: 'common' as const,
       effect: { type: 'shard_multiplier' as const, value: 1.2, duration: 2 }
     },
@@ -41,7 +41,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'bronze_cube',
       name: 'Bronze Cube', 
       description: 'Sturdy cube that provides protection for 1 room',
-      cost: 150,
+      cost: 750,
       rarity: 'common' as const,
       effect: { type: 'protection' as const, value: 1, duration: 1 }
     },
@@ -50,7 +50,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'silver_cube',
       name: 'Silver Cube',
       description: 'Shiny cube that gives 1.5x shard multiplier for 3 rooms',
-      cost: 300,
+      cost: 2500,
       rarity: 'rare' as const,
       effect: { type: 'shard_multiplier' as const, value: 1.5, duration: 3 }
     },
@@ -58,7 +58,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'emerald_cube',
       name: 'Emerald Cube',
       description: 'Speed-enhancing cube that boosts movement by 25% for 2 rooms',
-      cost: 400,
+      cost: 3500,
       rarity: 'rare' as const,
       effect: { type: 'speed_boost' as const, value: 1.25, duration: 2 }
     },
@@ -67,7 +67,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'golden_cube',
       name: 'Golden Cube',
       description: 'Precious cube that gives 2x shard multiplier for 4 rooms',
-      cost: 800,
+      cost: 12000,
       rarity: 'epic' as const,
       effect: { type: 'shard_multiplier' as const, value: 2.0, duration: 4 }
     },
@@ -75,7 +75,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'diamond_cube',
       name: 'Diamond Cube',
       description: 'Ultra-hard cube providing protection for 3 rooms',
-      cost: 1000,
+      cost: 15000,
       rarity: 'epic' as const,
       effect: { type: 'protection' as const, value: 1, duration: 3 }
     },
@@ -84,7 +84,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'ruby_cube',
       name: 'Ruby Cube',
       description: 'Legendary cube with 2.5x shard multiplier for 5 rooms',
-      cost: 2000,
+      cost: 35000,
       rarity: 'legendary' as const,
       effect: { type: 'shard_multiplier' as const, value: 2.5, duration: 5 }
     },
@@ -92,16 +92,16 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'sapphire_cube',
       name: 'Sapphire Cube',
       description: 'Legendary speed cube boosting movement by 50% for 3 rooms',
-      cost: 2500,
+      cost: 45000,
       rarity: 'legendary' as const,
       effect: { type: 'speed_boost' as const, value: 1.5, duration: 3 }
     },
-    // Prismatic cubes - Ultimate tier
+    // Prismatic cubes - Ultimate end-game tier
     {
       id: 'prismatic_cube',
       name: 'Prismatic Cube',
       description: 'Ultimate cube with 3x shard multiplier for 10 rooms',
-      cost: 5000,
+      cost: 100000,
       rarity: 'prismatic' as const,
       effect: { type: 'shard_multiplier' as const, value: 3.0, duration: 10 }
     },
@@ -109,7 +109,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
       id: 'void_cube',
       name: 'Void Cube',
       description: 'Mythical cube providing invulnerability for 5 rooms',
-      cost: 6000,
+      cost: 120000,
       rarity: 'prismatic' as const,
       effect: { type: 'protection' as const, value: 1, duration: 5 }
     }
