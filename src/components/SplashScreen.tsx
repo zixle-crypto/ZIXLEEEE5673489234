@@ -42,7 +42,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: false
         }
       });
       
@@ -63,7 +64,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: false
         }
       });
       
