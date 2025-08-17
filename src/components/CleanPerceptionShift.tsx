@@ -19,12 +19,14 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
+  const isMobile = useIsMobile();
   const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData, showDeviceSelection, setDevicePreference, setShowDeviceSelection } = useUserDataStore();
   
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
@@ -374,6 +376,24 @@ export const CleanPerceptionShift = () => {
         <div className="w-full aspect-[4/3] max-w-[800px] max-h-[600px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
+          
+          {/* Mobile Start Game Overlay */}
+          {!isPlaying && isMobile && (
+            <div className="absolute inset-0 bg-game-bg/90 flex items-center justify-center z-50 rounded-lg">
+              <div className="text-center p-6">
+                <h2 className="text-2xl font-bold text-perception mb-4 font-mono">TAP TO START</h2>
+                <Button
+                  onClick={initGame}
+                  className="bg-perception hover:bg-perception/90 text-white text-xl px-8 py-4 font-mono"
+                >
+                  START GAME
+                </Button>
+                <p className="text-game-text-dim text-sm mt-4">
+                  Use joystick to move • Touch screen to aim
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
