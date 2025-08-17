@@ -249,14 +249,24 @@ export const CleanPerceptionShift = () => {
 
   // Show main menu for authenticated users or guests
   if (currentScreen === 'menu') {
+    console.log('🔍 Device modal debug:', { showDeviceSelection, guestDeviceSelection, user: !!user, isGuest });
+    
     return (
-      <MainMenu
-        onPlay={() => setCurrentScreen('game')}
-        onLeaderboard={() => setCurrentScreen('leaderboard')}
-        onShop={() => setCurrentScreen('shop')}
-        onInventory={() => setCurrentScreen('inventory')}
-        totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
-      />
+      <>
+        <MainMenu
+          onPlay={() => setCurrentScreen('game')}
+          onLeaderboard={() => setCurrentScreen('leaderboard')}
+          onShop={() => setCurrentScreen('shop')}
+          onInventory={() => setCurrentScreen('inventory')}
+          totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
+        />
+        
+        {/* Device Selection Modal - Show for both authenticated and guest users */}
+        <DeviceSelectionModal
+          isOpen={showDeviceSelection || guestDeviceSelection}
+          onDeviceSelect={handleDeviceSelection}
+        />
+      </>
     );
   }
 
