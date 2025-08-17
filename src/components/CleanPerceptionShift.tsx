@@ -45,6 +45,13 @@ export const CleanPerceptionShift = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Safety redirect: If user authenticated but on wrong domain, redirect to game homepage
+        if (session?.user && window.location.hostname !== 'perceptionshift.zixlestudios.com') {
+          console.log('🔄 Redirecting to game homepage after authentication');
+          window.location.href = 'https://perceptionshift.zixlestudios.com';
+          return;
+        }
+        
         // Auto-sync user data when authenticated
         if (session?.user) {
           console.log('✅ User authenticated:', session.user.email);
