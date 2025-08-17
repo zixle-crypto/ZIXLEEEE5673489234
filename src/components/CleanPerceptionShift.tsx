@@ -53,17 +53,10 @@ export const CleanPerceptionShift = () => {
           // Give the user data store the authenticated user
           setUserData(session.user);
           
-          // Check if this is a redirect from OAuth (coming from external auth)
-          const urlParams = new URLSearchParams(window.location.search);
-          const isOAuthRedirect = urlParams.has('access_token') || urlParams.has('code') || 
-                                 document.referrer.includes('google.com') || 
-                                 document.referrer.includes('github.com') ||
-                                 document.referrer.includes('lovable.dev');
-          
-          // Auto-navigate directly to game if coming from OAuth, otherwise go to menu
+          // Auto-navigate to menu after successful auth, with a small delay
           setTimeout(() => {
             if (currentScreen === 'splash') {
-              setCurrentScreen(isOAuthRedirect ? 'game' : 'menu');
+              setCurrentScreen('menu');
             }
           }, 200);
           
