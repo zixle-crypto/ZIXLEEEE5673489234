@@ -11,6 +11,8 @@ import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
+import { GiftModal } from './GiftModal';
+import { DeviceSelectionModal } from './DeviceSelectionModal';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +25,7 @@ type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'invento
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
-  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
+  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData, showDeviceSelection, setDevicePreference, setShowDeviceSelection } = useUserDataStore();
   
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
@@ -325,6 +327,12 @@ export const CleanPerceptionShift = () => {
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
+
+      {/* Device Selection Modal */}
+      <DeviceSelectionModal
+        isOpen={showDeviceSelection}
+        onDeviceSelect={setDevicePreference}
+      />
     </div>
   );
 };
