@@ -22,11 +22,11 @@ export interface Room {
   exitActive: boolean;
 }
 
-// Create 100 challenging but completable rooms with increasing difficulty
+// Create 1100 challenging but completable rooms with increasing difficulty
 export const createRoom = (roomId: number): Room => {
-  // Ensure roomId is between 1-100
-  const id = Math.max(1, Math.min(100, roomId));
-  const difficultyLevel = Math.floor((id - 1) / 10); // 0-9 difficulty levels
+  // Support up to 1100 rooms
+  const id = Math.max(1, roomId);
+  const difficultyLevel = Math.floor((id - 1) / 50); // Slower difficulty progression: 0-21 difficulty levels
   const roomInLevel = (id - 1) % 10; // 0-9 room within difficulty level
   
   // Room type patterns for variety
