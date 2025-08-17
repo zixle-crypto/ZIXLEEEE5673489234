@@ -43,7 +43,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
-          skipBrowserRedirect: false
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       });
       
@@ -65,7 +68,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
         provider: 'github',
         options: {
           redirectTo: window.location.origin,
-          skipBrowserRedirect: false
         }
       });
       
