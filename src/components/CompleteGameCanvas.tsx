@@ -2,14 +2,18 @@
  * Complete game with room progression and ambiguous tiles
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { createRoom, Room, Tile } from '@/lib/roomSystem';
+import { TouchControls } from './TouchControls';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const CompleteGameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysRef = useRef<Set<string>>(new Set());
+  const [touchMovement, setTouchMovement] = useState({ left: false, right: false, up: false });
+  const isMobile = useIsMobile();
   
   const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 24, height: 24 });
   const cursorRef = useRef({ x: 400, y: 300 });
@@ -62,6 +66,16 @@ export const CompleteGameCanvas = () => {
     updateCursor(x, y);
   }, [updateCursor]);
 
+  // Touch control handlers
+  const handleTouchMovement = useCallback((movement: { left: boolean; right: boolean; up: boolean }) => {
+    setTouchMovement(movement);
+  }, []);
+
+  const handleTouchCursor = useCallback((x: number, y: number) => {
+    cursorRef.current = { x, y };
+    updateCursor(x, y);
+  }, [updateCursor]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -96,15 +110,15 @@ export const CompleteGameCanvas = () => {
         tile.isAttended = calculateAttention(tile, cursorRef.current);
       });
 
-      // Handle input
+      // Handle input (keyboard + touch)
       player.velX = 0;
-      if (keys.has('KeyA') || keys.has('ArrowLeft')) {
+      if (keys.has('KeyA') || keys.has('ArrowLeft') || touchMovement.left) {
         player.velX = -5;
       }
-      if (keys.has('KeyD') || keys.has('ArrowRight')) {
+      if (keys.has('KeyD') || keys.has('ArrowRight') || touchMovement.right) {
         player.velX = 5;
       }
-      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space')) && player.onGround) {
+      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space') || touchMovement.up) && player.onGround) {
         player.velY = -12;
         player.onGround = false;
       }
@@ -388,12 +402,12 @@ export const CompleteGameCanvas = () => {
     console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
   }, [player.x, player.y, currentRoom.id, roomsCleared, isGameOver, isPlaying]); // Added isGameOver and isPlaying to ensure respawn sync
 
-  return (
-    <div className="w-full h-full flex items-center justify-center">
+    return (
+    <div className="w-full h-full flex items-center justify-center relative">
       <canvas
         ref={canvasRef}
         className={`border border-game-border bg-game-bg rounded-lg ${
-          isPlaying && !isPaused && !isGameOver ? 'cursor-none' : 'cursor-default'
+          isPlaying && !isPaused && !isGameOver && !isMobile ? 'cursor-none' : 'cursor-default'
         }`}
         style={{
           width: '800px',
@@ -401,6 +415,12 @@ export const CompleteGameCanvas = () => {
           display: 'block',
           backgroundColor: '#1a1f2e'
         }}
+      />
+      
+      <TouchControls
+        onMovementChange={handleTouchMovement}
+        onCursorMove={handleTouchCursor}
+        isVisible={isPlaying && !isPaused && !isGameOver}
       />
     </div>
   );
