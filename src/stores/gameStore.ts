@@ -401,11 +401,21 @@ export const useGameStore = create<GameStore>()(
 
           if (error) {
             console.error('Error completing room:', error);
-            toast({
-              title: "Warning",
-              description: "Room completed but leaderboard not updated",
-              variant: "destructive"
-            });
+            // Check if user is authenticated before showing warning
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+              toast({
+                title: "Room Complete!",
+                description: "Playing as guest - progress not saved to leaderboard",
+              });
+            } else {
+              console.error('Authenticated user had room completion error:', error);
+              toast({
+                title: "Warning",
+                description: "Room completed but leaderboard may not be updated",
+                variant: "destructive"
+              });
+            }
           } else if (roomCompletionData?.success) {
             console.log('Room completion result:', roomCompletionData);
             toast({
@@ -420,6 +430,12 @@ export const useGameStore = create<GameStore>()(
               lastRoomReward: roomCompletionData.shardsEarned,
               currentRank: roomCompletionData.leaderboardData?.rank || prevState.currentRank
             }));
+          } else {
+            // No error but no success either - likely guest user
+            toast({
+              title: "Room Complete!",
+              description: "Great job! Playing as guest - sign in to save progress",
+            });
           }
         } catch (error) {
           console.error('Failed to complete room:', error);
