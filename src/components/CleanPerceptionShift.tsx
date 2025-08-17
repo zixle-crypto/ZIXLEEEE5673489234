@@ -220,7 +220,7 @@ export const CleanPerceptionShift = () => {
     return (
       <Shop
         onBack={() => setCurrentScreen('menu')}
-        totalShards={gameData?.total_shards || 0}
+        totalShards={gameStoreShards || (gameData?.total_shards || 0)}
         onPurchase={handleShopPurchase}
       />
     );
