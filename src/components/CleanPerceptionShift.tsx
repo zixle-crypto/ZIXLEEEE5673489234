@@ -17,12 +17,14 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
+import { useGiftNotifications } from '@/hooks/useGiftNotifications';
 
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
   const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
+  const { setIsInGame } = useGiftNotifications();
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -147,8 +149,11 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     if (currentScreen === 'game') {
       initGame();
+      setIsInGame(true);
+    } else {
+      setIsInGame(false);
     }
-  }, [initGame, currentScreen]);
+  }, [initGame, currentScreen, setIsInGame]);
 
   const handleUserComplete = (userEmail: string) => {
     console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);
