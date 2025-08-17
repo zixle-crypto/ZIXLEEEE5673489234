@@ -38,46 +38,25 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
-    console.log('Starting Google OAuth flow...');
+    console.log('🚀 Starting Google OAuth with full page redirect...');
     
     try {
-      const redirectUrl = `${window.location.origin}`;
-      console.log('Redirect URL:', redirectUrl);
+      // Force full page navigation to avoid any iframe embedding
+      const redirectUrl = window.location.origin;
+      console.log('🔗 Redirect URL:', redirectUrl);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false
-        }
-      });
+      // Immediately redirect to Supabase OAuth URL without waiting
+      const authUrl = `https://ihvnriqsrdhayysfcywm.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+      console.log('🌐 Redirecting directly to:', authUrl);
       
-      console.log('OAuth response:', { data, error });
-      
-      if (error) {
-        console.error('Google OAuth error details:', error);
-        throw error;
-      }
-      
-      if (data?.url) {
-        console.log('Redirecting to:', data.url);
-        // Force redirect using window.location to avoid iframe issues
-        window.location.href = data.url;
-        return;
-      }
+      // Use top-level window navigation to ensure no iframe issues
+      window.top!.location.href = authUrl;
       
     } catch (error: any) {
-      console.error('Google sign-in failed:', error);
-      
-      // Provide more specific error messages
-      let errorMessage = error.message || "Please try again";
-      if (error.message?.includes('frame')) {
-        errorMessage = "OAuth provider configuration issue. Please check your settings.";
-      }
-      
+      console.error('❌ Google sign-in failed:', error);
       toast({
         title: "Sign in failed",
-        description: errorMessage,
+        description: "Authentication error. Please try again.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -86,45 +65,25 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGitHub = async () => {
     setIsLoading(true);
-    console.log('Starting GitHub OAuth flow...');
+    console.log('🚀 Starting GitHub OAuth with full page redirect...');
     
     try {
-      const redirectUrl = `${window.location.origin}`;
-      console.log('Redirect URL:', redirectUrl);
+      // Force full page navigation to avoid any iframe embedding
+      const redirectUrl = window.location.origin;
+      console.log('🔗 Redirect URL:', redirectUrl);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false
-        }
-      });
+      // Immediately redirect to Supabase OAuth URL without waiting
+      const authUrl = `https://ihvnriqsrdhayysfcywm.supabase.co/auth/v1/authorize?provider=github&redirect_to=${encodeURIComponent(redirectUrl)}`;
+      console.log('🌐 Redirecting directly to:', authUrl);
       
-      console.log('GitHub OAuth response:', { data, error });
-      
-      if (error) {
-        console.error('GitHub OAuth error details:', error);
-        throw error;
-      }
-      
-      if (data?.url) {
-        console.log('Redirecting to:', data.url);
-        // Force redirect using window.location to avoid iframe issues
-        window.location.href = data.url;
-        return;
-      }
+      // Use top-level window navigation to ensure no iframe issues
+      window.top!.location.href = authUrl;
       
     } catch (error: any) {
-      console.error('GitHub sign-in failed:', error);
-      
-      let errorMessage = error.message || "Please try again";
-      if (error.message?.includes('frame')) {
-        errorMessage = "OAuth provider configuration issue. Please check your settings.";
-      }
-      
+      console.error('❌ GitHub sign-in failed:', error);
       toast({
         title: "Sign in failed", 
-        description: errorMessage,
+        description: "Authentication error. Please try again.",
         variant: "destructive"
       });
       setIsLoading(false);
