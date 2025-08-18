@@ -2,10 +2,11 @@
  * Main menu component with Play, Leaderboard, and Shop buttons
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Trophy, ShoppingBag, Package, Gem } from 'lucide-react';
+import { Play, Trophy, ShoppingBag, Package, Gem, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { FeedbackModal } from './FeedbackModal';
 
 interface MainMenuProps {
   onPlay: () => void;
@@ -24,6 +25,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onCrateShop,
   totalShards
 }) => {
+  const [showFeedback, setShowFeedback] = useState(false);
   
   // Request notification permission on component mount
   React.useEffect(() => {
@@ -119,9 +121,23 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="mt-8 text-center text-game-text-dim text-sm">
-        <p>Weekly Seed Challenge • Compete globally</p>
+      <div className="mt-8 text-center space-y-4">
+        <Button
+          onClick={() => setShowFeedback(true)}
+          variant="outline"
+          size="sm"
+          className="border-game-border text-game-text-dim hover:text-perception hover:border-perception font-mono"
+        >
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Give Feedback
+        </Button>
+        <p className="text-game-text-dim text-sm">Weekly Seed Challenge • Compete globally</p>
       </div>
+
+      <FeedbackModal 
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
     </div>
   );
 };
