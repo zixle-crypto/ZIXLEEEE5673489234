@@ -90,9 +90,17 @@ export const CompleteGameCanvas = () => {
       const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        // Ensure minimum canvas size for mobile devices
+        const minWidth = 320;
+        const minHeight = 480;
+        canvas.width = Math.max(rect.width || minWidth, minWidth);
+        canvas.height = Math.max(rect.height || minHeight, minHeight);
         console.log(`📏 Canvas resized to ${canvas.width}x${canvas.height}`);
+        
+        // Force canvas to be visible with explicit styling
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
       }
     };
 
