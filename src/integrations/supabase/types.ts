@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          category: string | null
+          created_at: string
+          developer_notes: string | null
+          feedback_text: string
+          id: string
+          processed: boolean | null
+          rating: number | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          developer_notes?: string | null
+          feedback_text: string
+          id?: string
+          processed?: boolean | null
+          rating?: number | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          developer_notes?: string | null
+          feedback_text?: string
+          id?: string
+          processed?: boolean | null
+          rating?: number | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gifts: {
         Row: {
           claimed: boolean
