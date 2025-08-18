@@ -12,29 +12,25 @@ import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
 import { GiftModal } from './GiftModal';
-import { DeviceSelectionModal } from './DeviceSelectionModal';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
-  const isMobile = useIsMobile();
-  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData, showDeviceSelection, setDevicePreference, setShowDeviceSelection } = useUserDataStore();
+  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
   
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
-  const [guestDeviceSelection, setGuestDeviceSelection] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -68,13 +64,6 @@ export const CleanPerceptionShift = () => {
           
           // Give the user data store the authenticated user
           setUserData(session.user);
-          
-          // Force show device selection for all authenticated users (temporary for debugging)
-          console.log('🎯 Forcing device selection modal to show...');
-          setTimeout(() => {
-            console.log('⏰ Timeout triggered - setting device selection to true');
-            setShowDeviceSelection(true);
-          }, 500);
           
           // Auto-navigate to menu after successful auth, with a small delay
           setTimeout(() => {
@@ -158,13 +147,6 @@ export const CleanPerceptionShift = () => {
         console.log('👤 Existing session found for:', session.user.email);
         console.log('🔄 Setting user data from existing session...');
         setUserData(session.user);
-        
-        // Force show device selection for authenticated users
-        console.log('🎯 Forcing device selection from existing session...');
-        setTimeout(() => {
-          console.log('⏰ Device selection timeout from existing session');
-          setShowDeviceSelection(true);
-        }, 1000);
       } else {
         console.log('🚫 No existing session found');
       }
@@ -195,29 +177,12 @@ export const CleanPerceptionShift = () => {
       console.log('✅ Guest mode activated');
       setIsGuest(true);
       setCurrentScreen('menu');
-      
-      // Check if guest has device preference, if not show selection
-      const guestDevicePreference = localStorage.getItem('guestDevicePreference');
-      if (!guestDevicePreference) {
-        setGuestDeviceSelection(true);
-      }
     } else {
       // Regular authenticated user flow
       setCurrentScreen('menu');
     }
   };
 
-  // Handle device selection for both authenticated and guest users
-  const handleDeviceSelection = async (deviceType: 'desktop' | 'mobile' | 'tablet') => {
-    if (isGuest) {
-      // Store guest device preference in localStorage
-      localStorage.setItem('guestDevicePreference', deviceType);
-      setGuestDeviceSelection(false);
-    } else {
-      // Use the store method for authenticated users
-      await setDevicePreference(deviceType);
-    }
-  };
 
   const handleShopPurchase = async (itemId: string, cost: number) => {
     try {
@@ -270,29 +235,14 @@ export const CleanPerceptionShift = () => {
 
   // Show main menu for authenticated users or guests
   if (currentScreen === 'menu') {
-    console.log('🔍 MENU SCREEN Debug:');
-    console.log('  - showDeviceSelection:', showDeviceSelection);
-    console.log('  - guestDeviceSelection:', guestDeviceSelection);
-    console.log('  - user exists:', !!user);
-    console.log('  - isGuest:', isGuest);
-    console.log('  - user email:', user?.email);
-    
     return (
-      <>
-        <MainMenu
-          onPlay={() => setCurrentScreen('game')}
-          onLeaderboard={() => setCurrentScreen('leaderboard')}
-          onShop={() => setCurrentScreen('shop')}
-          onInventory={() => setCurrentScreen('inventory')}
-          totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
-        />
-        
-        {/* Device Selection Modal - Show for both authenticated and guest users */}
-        <DeviceSelectionModal
-          isOpen={showDeviceSelection || guestDeviceSelection}
-          onDeviceSelect={handleDeviceSelection}
-        />
-      </>
+      <MainMenu
+        onPlay={() => setCurrentScreen('game')}
+        onLeaderboard={() => setCurrentScreen('leaderboard')}
+        onShop={() => setCurrentScreen('shop')}
+        onInventory={() => setCurrentScreen('inventory')}
+        totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
+      />
     );
   }
 
@@ -381,11 +331,6 @@ export const CleanPerceptionShift = () => {
       </div>
 
 
-      {/* Device Selection Modal - Show for both authenticated and guest users */}
-      <DeviceSelectionModal
-        isOpen={showDeviceSelection || guestDeviceSelection}
-        onDeviceSelect={handleDeviceSelection}
-      />
     </div>
   );
 };

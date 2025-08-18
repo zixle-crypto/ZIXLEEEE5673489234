@@ -5,15 +5,11 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { createRoom, Room, Tile } from '@/lib/roomSystem';
-import { TouchControls } from './TouchControls';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export const CompleteGameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysRef = useRef<Set<string>>(new Set());
-  const [touchMovement, setTouchMovement] = useState({ left: false, right: false, up: false });
-  const isMobile = useIsMobile();
   
   const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 32, height: 32 });
   const cursorRef = useRef({ x: 400, y: 300 });
@@ -66,16 +62,6 @@ export const CompleteGameCanvas = () => {
     updateCursor(x, y);
   }, [updateCursor]);
 
-  // Touch control handlers
-  const handleTouchMovement = useCallback((movement: { left: boolean; right: boolean; up: boolean }) => {
-    console.log('🕹️ Touch movement received:', movement);
-    setTouchMovement(movement);
-  }, []);
-
-  const handleTouchCursor = useCallback((x: number, y: number) => {
-    cursorRef.current = { x, y };
-    updateCursor(x, y);
-  }, [updateCursor]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -131,20 +117,17 @@ export const CompleteGameCanvas = () => {
         tile.isAttended = calculateAttention(tile, cursorRef.current);
       });
 
-      // Handle input (keyboard + touch)
+      // Handle keyboard input
       player.velX = 0;
-      if (keys.has('KeyA') || keys.has('ArrowLeft') || touchMovement.left) {
+      if (keys.has('KeyA') || keys.has('ArrowLeft')) {
         player.velX = -5;
-        console.log('⬅️ Moving left, velX:', player.velX);
       }
-      if (keys.has('KeyD') || keys.has('ArrowRight') || touchMovement.right) {
+      if (keys.has('KeyD') || keys.has('ArrowRight')) {
         player.velX = 5;
-        console.log('➡️ Moving right, velX:', player.velX);
       }
-      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space') || touchMovement.up) && player.onGround) {
+      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space')) && player.onGround) {
         player.velY = -12;
         player.onGround = false;
-        console.log('⬆️ Jumping, velY:', player.velY);
       }
 
       // Apply physics
@@ -449,18 +432,12 @@ export const CompleteGameCanvas = () => {
       <canvas
         ref={canvasRef}
         className={`border border-game-border bg-game-bg rounded-lg w-full h-full ${
-          isPlaying && !isPaused && !isGameOver && !isMobile ? 'cursor-none' : 'cursor-default'
+          isPlaying && !isPaused && !isGameOver ? 'cursor-none' : 'cursor-default'
         }`}
         style={{
           display: 'block',
           backgroundColor: '#1a1f2e'
         }}
-      />
-      
-      <TouchControls
-        onMovementChange={handleTouchMovement}
-        onCursorMove={handleTouchCursor}
-        isVisible={isPlaying && !isPaused && !isGameOver}
       />
     </div>
   );
