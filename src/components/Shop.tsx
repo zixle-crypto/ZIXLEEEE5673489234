@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Clock, Sparkles, Zap, Shield, Star, Box, Gem, Gift } from 'lucide-react';
 import { useShopStore, type CubeItem } from '@/stores/shopStore';
 import { GiftModal } from '@/components/GiftModal';
+import { CrateShop } from '@/components/CrateShop';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { CrateReward } from '@/lib/crateSystem';
 
 interface ShopProps {
   onBack: () => void;
@@ -32,6 +34,7 @@ export const Shop: React.FC<ShopProps> = ({
 
   const [selectedGiftItem, setSelectedGiftItem] = useState<CubeItem | null>(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [showCrateShop, setShowCrateShop] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<'all' | CubeItem['rarity']>('all');
   const [timeUntilRestock, setTimeUntilRestock] = useState(0);
@@ -177,6 +180,26 @@ export const Shop: React.FC<ShopProps> = ({
     }
   };
 
+  const handleCrateRewards = (rewards: CrateReward[]) => {
+    rewards.forEach(reward => {
+      // Add each cube to inventory (this would integrate with your user data store)
+      console.log('Received cube:', reward.cubeName, reward.rarity);
+    });
+    toast({
+      title: "Cubes Received!",
+      description: `${rewards.length} cubes added to your collection!`,
+    });
+  };
+
+  if (showCrateShop) {
+    return (
+      <CrateShop 
+        onBack={() => setShowCrateShop(false)}
+        onRewardsReceived={handleCrateRewards}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-game-bg via-game-surface to-game-bg p-4 font-mono">
       {/* Header */}
@@ -194,6 +217,13 @@ export const Shop: React.FC<ShopProps> = ({
           <h1 className="text-4xl font-black text-perception font-orbitron tracking-wider">
             CUBE SHOP
           </h1>
+          <Button
+            onClick={() => setShowCrateShop(true)}
+            className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm"
+            size="sm"
+          >
+            💎 PREMIUM CRATES 💎
+          </Button>
           <div className="flex items-center justify-center gap-2 mt-2">
             <Clock className="w-4 h-4 text-perception" />
             <span className="text-sm text-game-text">
