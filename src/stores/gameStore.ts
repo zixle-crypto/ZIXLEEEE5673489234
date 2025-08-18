@@ -118,7 +118,7 @@ export const useGameStore = create<GameStore>()(
       startTime: Date.now(),
       roomStartTime: Date.now(),
       
-      isPlaying: true,
+      isPlaying: false, // Start false, let initGame set to true
       isPaused: false,
       isGameOver: false,
       

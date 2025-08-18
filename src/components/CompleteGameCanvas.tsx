@@ -110,6 +110,7 @@ export const CompleteGameCanvas = () => {
 
     // Game update logic
     const updateGame = () => {
+      console.log('🎮 Game update check - isPlaying:', isPlaying, 'isPaused:', isPaused, 'isGameOver:', isGameOver);
       if (!isPlaying || isPaused || isGameOver) return;
 
       const player = playerRef.current;
@@ -247,6 +248,7 @@ export const CompleteGameCanvas = () => {
 
     // Render game
     const render = () => {
+      console.log('🎨 Render called - isPlaying:', isPlaying, 'canvas dims:', canvas?.width, 'x', canvas?.height);
       const room = currentRoomRef.current;
       
       // Clear canvas

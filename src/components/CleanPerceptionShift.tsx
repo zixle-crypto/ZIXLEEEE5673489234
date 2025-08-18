@@ -183,6 +183,7 @@ export const CleanPerceptionShift = () => {
 
   useEffect(() => {
     if (currentScreen === 'game') {
+      console.log('🎯 Game screen detected - calling initGame()');
       initGame();
     }
   }, [initGame, currentScreen]);
