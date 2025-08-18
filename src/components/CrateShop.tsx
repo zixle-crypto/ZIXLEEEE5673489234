@@ -5,9 +5,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ShoppingCart, Gem, Star, Sparkles, Zap } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Gem, Star, Sparkles, Zap, Gift } from 'lucide-react';
 import { CRATE_TYPES, CrateType, formatPrice } from '@/lib/crateSystem';
 import { CrateSpinnerComponent } from './CrateSpinner';
+import { GiftCrateModal } from './GiftCrateModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CrateReward } from '@/lib/crateSystem';
@@ -22,6 +23,8 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
   const [selectedCrate, setSelectedCrate] = useState<CrateType | null>(null);
   const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
   const [purchasingCrate, setPurchasingCrate] = useState<string | null>(null);
+  const [selectedGiftCrate, setSelectedGiftCrate] = useState<CrateType | null>(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
 
   const categories = [
     { key: 'all', label: 'ALL CRATES', icon: Gem },
@@ -112,6 +115,58 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
   const handleSpinnerClose = () => {
     setIsSpinnerOpen(false);
     setSelectedCrate(null);
+  };
+
+  const handleGiftClick = (crate: CrateType) => {
+    setSelectedGiftCrate(crate);
+    setIsGiftModalOpen(true);
+  };
+
+  const handleGiftSend = async (recipient: string, message: string) => {
+    if (!selectedGiftCrate) return;
+    
+    try {
+      console.log('🎁 Sending crate gift:', selectedGiftCrate.name, 'to:', recipient);
+      
+      const { data: giftResult, error } = await supabase.functions.invoke('send-gift', {
+        body: {
+          cubeId: selectedGiftCrate.id,
+          cubeName: selectedGiftCrate.name,
+          cubeCost: selectedGiftCrate.price,
+          recipient: recipient,
+          recipientType: recipient.includes('@') ? 'email' : 'github',
+          message: message,
+          crateType: 'premium_crate'
+        }
+      });
+
+      if (error) {
+        console.error('Crate gift sending failed:', error);
+        toast({
+          title: "Gift Failed",
+          description: error.message || "Failed to send crate gift",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Crate gift sent successfully:', giftResult);
+      toast({
+        title: "Premium Crate Sent! 🎁",
+        description: `${selectedGiftCrate.name} sent to ${recipient}!`,
+      });
+      
+    } catch (error) {
+      console.error('Crate gift error:', error);
+      toast({
+        title: "Gift Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGiftModalOpen(false);
+      setSelectedGiftCrate(null);
+    }
   };
 
   const getCrateIcon = (price: number) => {
@@ -244,7 +299,7 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
                     <Button
                       onClick={() => handlePurchase(crate)}
                       disabled={isPurchasing}
-                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 flex-1"
                     >
                       {isPurchasing ? (
                         <>
@@ -257,6 +312,15 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
                           BUY NOW
                         </>
                       )}
+                    </Button>
+
+                    <Button
+                      onClick={() => handleGiftClick(crate)}
+                      variant="outline"
+                      className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                      size="sm"
+                    >
+                      <Gift className="w-4 h-4" />
                     </Button>
                     
                     {/* Demo button - remove in production */}
@@ -317,6 +381,14 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
           onRewardsReceived={onRewardsReceived}
         />
       )}
+
+      {/* Gift Crate Modal */}
+      <GiftCrateModal
+        isOpen={isGiftModalOpen}
+        onClose={() => setIsGiftModalOpen(false)}
+        crate={selectedGiftCrate}
+        onSend={handleGiftSend}
+      />
     </div>
   );
 };

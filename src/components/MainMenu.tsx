@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Trophy, ShoppingBag, Package } from 'lucide-react';
+import { Play, Trophy, ShoppingBag, Package, Gem } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MainMenuProps {
@@ -12,6 +12,7 @@ interface MainMenuProps {
   onLeaderboard: () => void;
   onShop: () => void;
   onInventory: () => void;
+  onCrateShop: () => void;
   totalShards: number;
 }
 
@@ -20,6 +21,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onLeaderboard,
   onShop,
   onInventory,
+  onCrateShop,
   totalShards
 }) => {
   
@@ -86,7 +88,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           LEADERBOARD
         </Button>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Button
             onClick={onShop}
             variant="outline"
@@ -94,6 +96,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           >
             <ShoppingBag className="w-6 h-6" />
             SHOP
+          </Button>
+          
+          <Button
+            onClick={onCrateShop}
+            variant="outline"
+            className="h-16 border-yellow-400 text-yellow-400 hover:bg-yellow-400/10 font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
+          >
+            <Gem className="w-6 h-6" />
+            CRATES
           </Button>
           
           <Button

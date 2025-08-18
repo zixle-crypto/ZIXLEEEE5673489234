@@ -18,9 +18,10 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
+import { CrateShop } from './CrateShop';
 
 
-type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
+type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
@@ -241,6 +242,7 @@ export const CleanPerceptionShift = () => {
         onLeaderboard={() => setCurrentScreen('leaderboard')}
         onShop={() => setCurrentScreen('shop')}
         onInventory={() => setCurrentScreen('inventory')}
+        onCrateShop={() => setCurrentScreen('crateShop')}
         totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
       />
     );
@@ -272,6 +274,23 @@ export const CleanPerceptionShift = () => {
     return (
       <Inventory 
         onBack={() => setCurrentScreen('menu')}
+      />
+    );
+  }
+
+  if (currentScreen === 'crateShop') {
+    return (
+      <CrateShop
+        onBack={() => setCurrentScreen('menu')}
+        onRewardsReceived={(rewards) => {
+          rewards.forEach(reward => {
+            console.log('Received cube:', reward.cubeName, reward.rarity);
+          });
+          toast({
+            title: "Cubes Received!",
+            description: `${rewards.length} cubes added to your collection!`,
+          });
+        }}
       />
     );
   }
