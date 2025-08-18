@@ -77,7 +77,7 @@ export const CompleteGameCanvas = () => {
       const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
-        // Ensure minimum canvas size for mobile devices
+        // Ensure minimum canvas size
         const minWidth = 320;
         const minHeight = 480;
         canvas.width = Math.max(rect.width || minWidth, minWidth);

@@ -28,7 +28,7 @@ export const UserGuide: React.FC = () => {
           <CardContent className="text-game-text-dim text-sm space-y-2">
             <p>• <strong>Email Verification:</strong> Enter your email to receive a 6-digit code</p>
             <p>• <strong>Auto-Save:</strong> Your progress is automatically saved to your account</p>
-            <p>• <strong>Cross-Device:</strong> Play on any device - just enter your email to load your data</p>
+            <p>• <strong>Cross-Platform:</strong> Play on any computer - just enter your email to load your data</p>
             <p>• <strong>No Passwords:</strong> We use magic codes instead of passwords for security</p>
             <p className="text-perception">💡 Same email = Same account with all your progress!</p>
           </CardContent>
