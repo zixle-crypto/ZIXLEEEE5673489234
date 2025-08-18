@@ -105,10 +105,27 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
   if (!isMobile || !isVisible) return null;
 
   return (
-    <>
+    <div 
+      className="fixed inset-0 pointer-events-none z-40 select-none"
+      style={{ 
+        userSelect: 'none', 
+        WebkitUserSelect: 'none', 
+        MozUserSelect: 'none', 
+        msUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent'
+      }}
+    >
       {/* Touch area for cursor movement - improved with better visual feedback */}
       <div
-        className="absolute inset-0 pointer-events-auto"
+        className="absolute inset-0 pointer-events-auto select-none"
+        style={{ 
+          userSelect: 'none', 
+          WebkitUserSelect: 'none', 
+          MozUserSelect: 'none', 
+          msUserSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
         onTouchStart={handleScreenTouch}
         onTouchMove={(e) => {
           if (touchIdRef.current === null) {
@@ -122,47 +139,74 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
       />
       
       {/* Virtual Joystick - Compact size */}
-      <div className="absolute bottom-4 left-4 z-50">
+      <div className="absolute bottom-4 left-4 z-50 select-none" 
+           style={{ 
+             userSelect: 'none', 
+             WebkitUserSelect: 'none', 
+             MozUserSelect: 'none', 
+             msUserSelect: 'none',
+             WebkitTouchCallout: 'none',
+             WebkitTapHighlightColor: 'transparent'
+           }}>
         <div
           ref={joystickRef}
-          className={`relative w-20 h-20 rounded-full border-2 border-hud-border bg-hud-bg/90 transition-all duration-200 ${
+          className={`relative w-20 h-20 rounded-full border-2 border-hud-border bg-hud-bg/90 transition-all duration-200 select-none ${
             isPressed ? 'scale-105 shadow-glow-attention border-perception' : 'shadow-shadow-game'
           }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          style={{ touchAction: 'none' }}
+          style={{ 
+            touchAction: 'none',
+            userSelect: 'none', 
+            WebkitUserSelect: 'none', 
+            MozUserSelect: 'none', 
+            msUserSelect: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitTapHighlightColor: 'transparent'
+          }}
         >
           <div
             ref={knobRef}
-            className={`absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 shadow-lg ${
+            className={`absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 shadow-lg select-none ${
               isPressed ? 'scale-110 shadow-glow-attention' : 'shadow-shadow-game'
             }`}
-            style={{ touchAction: 'none' }}
+            style={{ 
+              touchAction: 'none',
+              userSelect: 'none', 
+              WebkitUserSelect: 'none', 
+              MozUserSelect: 'none', 
+              msUserSelect: 'none',
+              WebkitTouchCallout: 'none'
+            }}
           />
           
           {/* Direction indicators - Larger and clearer */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-game-text text-sm font-bold">↑</div>
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold">←</div>
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold">→</div>
+          <div className="absolute inset-0 pointer-events-none select-none" 
+               style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-game-text text-sm font-bold select-none">↑</div>
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold select-none">←</div>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-game-text text-sm font-bold select-none">→</div>
           </div>
           
           {/* Active direction feedback */}
           {movement.up && (
-            <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+            <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-perception rounded-full animate-pulse select-none"></div>
           )}
           {movement.left && (
-            <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+            <div className="absolute left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse select-none"></div>
           )}
           {movement.right && (
-            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse"></div>
+            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-perception rounded-full animate-pulse select-none"></div>
           )}
         </div>
         
-        <div className="text-center mt-2 text-game-text text-sm font-bold">MOVE</div>
+        <div className="text-center mt-2 text-game-text text-sm font-bold select-none" 
+             style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+          MOVE
+        </div>
       </div>
 
-    </>
+    </div>
   );
 };
