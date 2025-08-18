@@ -16,7 +16,6 @@ export interface UserGameData {
   speed_boost_rooms_left: number;
   protection_rooms_left: number;
   equipped_cube_id?: string; // New field for equipped cube
-  preferred_device?: string; // Device preference - will be validated as union type
 }
 
 export interface UserInventoryItem {
@@ -33,7 +32,6 @@ interface UserDataState {
   inventory: UserInventoryItem[];
   loading: boolean;
   error: string | null;
-  showDeviceSelection: boolean;
 }
 
 interface UserDataStore extends UserDataState {
@@ -42,9 +40,7 @@ interface UserDataStore extends UserDataState {
   loadUserData: () => Promise<void>;
   updateShards: (amount: number) => Promise<void>;
   addCubeToInventory: (cubeId: string, quantity?: number) => Promise<void>;
-  updatePowerUps: (powerUps: Partial<Pick<UserGameData, 'active_shard_multiplier' | 'active_speed_boost' | 'active_protection' | 'shard_multiplier_rooms_left' | 'speed_boost_rooms_left' | 'protection_rooms_left' | 'equipped_cube_id' | 'preferred_device'>>) => Promise<void>;
-  setDevicePreference: (deviceType: 'desktop' | 'mobile' | 'tablet') => Promise<void>;
-  setShowDeviceSelection: (show: boolean) => void;
+  updatePowerUps: (powerUps: Partial<Pick<UserGameData, 'active_shard_multiplier' | 'active_speed_boost' | 'active_protection' | 'shard_multiplier_rooms_left' | 'speed_boost_rooms_left' | 'protection_rooms_left' | 'equipped_cube_id'>>) => Promise<void>;
   clearUserData: () => void;
 }
 
@@ -55,7 +51,6 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
   inventory: [],
   loading: false,
   error: null,
-  showDeviceSelection: false,
 
   // Actions
   setUser: (user) => {
@@ -69,19 +64,13 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       console.log('✅ User has ID, starting auto data load...');
       
       // Start loading immediately
-      get().loadUserData().then(() => {
-        // After loading, check if we need to show device selection
-        const { gameData } = get();
-        if (gameData && !gameData.preferred_device) {
-          set({ showDeviceSelection: true });
-        }
-      }).catch(error => {
+      get().loadUserData().catch(error => {
         console.error('❌ Auto data load failed:', error);
         set({ error: error.message, loading: false });
       });
     } else {
       console.log('❌ No user, clearing data...');
-      set({ gameData: null, inventory: [], loading: false, showDeviceSelection: false });
+      set({ gameData: null, inventory: [], loading: false });
     }
   },
 
@@ -248,39 +237,13 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     }
   },
 
-  setDevicePreference: async (deviceType: 'desktop' | 'mobile' | 'tablet') => {
-    const { user, gameData } = get();
-    if (!user || !gameData) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_game_data')
-        .update({ preferred_device: deviceType })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      set({ gameData: data, showDeviceSelection: false });
-    } catch (error: any) {
-      console.error('Failed to update device preference:', error);
-      set({ error: error.message });
-    }
-  },
-
-  setShowDeviceSelection: (show: boolean) => {
-    set({ showDeviceSelection: show });
-  },
-
   clearUserData: () => {
     set({
       user: null,
       gameData: null,
       inventory: [],
       loading: false,
-      error: null,
-      showDeviceSelection: false
+      error: null
     });
   }
 }));

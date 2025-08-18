@@ -439,22 +439,18 @@ export const useGameStore = create<GameStore>()(
 
       syncPowerUpsFromUserData: () => {
         // Import user data store here to avoid circular imports
-        import('@/stores/userDataStore').then(({ useUserDataStore }) => {
-          const { gameData } = useUserDataStore.getState();
-          
-          if (gameData) {
-            set({
-              activePowerUps: {
-                shardMultiplier: gameData.active_shard_multiplier || 1,
-                speedBoost: gameData.active_speed_boost || 1,
-                protection: gameData.active_protection || 0,
-              }
-            });
-            console.log('🔄 Synced power-ups from user data:', gameData);
-          }
-        }).catch(error => {
-          console.error('❌ Failed to sync power-ups:', error);
-        });
+        const { gameData } = require('@/stores/userDataStore').useUserDataStore.getState();
+        
+        if (gameData) {
+          set({
+            activePowerUps: {
+              shardMultiplier: gameData.active_shard_multiplier || 1,
+              speedBoost: gameData.active_speed_boost || 1,
+              protection: gameData.active_protection || 0,
+            }
+          });
+          console.log('🔄 Synced power-ups from user data:', gameData);
+        }
       },
     }),
     {
