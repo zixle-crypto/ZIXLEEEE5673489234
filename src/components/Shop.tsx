@@ -5,8 +5,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, Sparkles, Zap, Shield, Star, Box, Gem } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles, Zap, Shield, Star, Box, Gem, Gift } from 'lucide-react';
 import { useShopStore, type CubeItem } from '@/stores/shopStore';
+import { GiftModal } from '@/components/GiftModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ShopProps {
   onBack: () => void;
@@ -26,6 +29,9 @@ export const Shop: React.FC<ShopProps> = ({
     getTimeUntilRestock,
     applyPowerUp 
   } = useShopStore();
+
+  const [selectedGiftItem, setSelectedGiftItem] = useState<CubeItem | null>(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<'all' | CubeItem['rarity']>('all');
   const [timeUntilRestock, setTimeUntilRestock] = useState(0);
@@ -112,6 +118,62 @@ export const Shop: React.FC<ShopProps> = ({
     if (totalShards >= item.cost && purchaseItem(item.id)) {
       onPurchase(item.id, item.cost);
       applyPowerUp(item.id);
+    }
+  };
+
+  const handleGiftClick = (item: CubeItem) => {
+    setSelectedGiftItem(item);
+    setIsGiftModalOpen(true);
+  };
+
+  const handleGiftSend = async (recipient: string, message: string) => {
+    if (!selectedGiftItem) return;
+    
+    try {
+      console.log('🎁 Sending gift:', selectedGiftItem.name, 'to:', recipient);
+      
+      const { data: giftResult, error } = await supabase.functions.invoke('send-gift', {
+        body: {
+          cubeId: selectedGiftItem.id,
+          cubeName: selectedGiftItem.name,
+          cubeCost: selectedGiftItem.cost,
+          recipient: recipient,
+          recipientType: recipient.includes('@') ? 'email' : 'github',
+          message: message
+        }
+      });
+
+      if (error) {
+        console.error('Gift sending failed:', error);
+        toast({
+          title: "Gift Failed",
+          description: error.message || "Failed to send gift",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Gift sent successfully:', giftResult);
+      toast({
+        title: "Gift Sent! 🎁",
+        description: `${selectedGiftItem.name} sent to ${recipient}!`,
+      });
+
+      // Update local shard count immediately
+      if (onPurchase) {
+        onPurchase(selectedGiftItem.id, selectedGiftItem.cost);
+      }
+      
+    } catch (error) {
+      console.error('Gift error:', error);
+      toast({
+        title: "Gift Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGiftModalOpen(false);
+      setSelectedGiftItem(null);
     }
   };
 
@@ -223,19 +285,31 @@ export const Shop: React.FC<ShopProps> = ({
                     <span className="text-game-text font-bold">{item.cost}</span>
                   </div>
                   
-                  <Button
-                    onClick={() => canAfford && handlePurchase(item)}
-                    disabled={!canAfford}
-                    className={
-                      canAfford
-                        ? 'bg-perception hover:bg-perception/90 text-white'
-                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    }
-                    size="sm"
-                  >
-                    {!item.inStock || item.quantity <= 0 ? 'OUT OF STOCK' :
-                     !canAfford ? 'NOT ENOUGH' : 'BUY'}
-                  </Button>
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      onClick={() => canAfford && handlePurchase(item)}
+                      disabled={!canAfford}
+                      className={
+                        canAfford
+                          ? 'bg-perception hover:bg-perception/90 text-white flex-1'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed flex-1'
+                      }
+                      size="sm"
+                    >
+                      {!item.inStock || item.quantity <= 0 ? 'OUT OF STOCK' :
+                       !canAfford ? 'NOT ENOUGH' : 'BUY'}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleGiftClick(item)}
+                      disabled={!canAfford || !item.inStock || item.quantity <= 0}
+                      variant="outline"
+                      className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                      size="sm"
+                    >
+                      <Gift className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -263,6 +337,14 @@ export const Shop: React.FC<ShopProps> = ({
           ✨ Rarity affects spawn chance: Common (60%) → Rare (25%) → Epic (10%) → Legendary (4%) → Prismatic (1%)
         </p>
       </div>
+      
+      <GiftModal
+        isOpen={isGiftModalOpen}
+        onClose={() => setIsGiftModalOpen(false)}
+        item={selectedGiftItem}
+        onSend={handleGiftSend}
+        senderShards={totalShards}
+      />
     </div>
   );
 };

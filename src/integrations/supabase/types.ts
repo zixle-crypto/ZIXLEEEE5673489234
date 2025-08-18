@@ -41,6 +41,57 @@ export type Database = {
         }
         Relationships: []
       }
+      gifts: {
+        Row: {
+          claimed: boolean
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          cube_cost: number
+          cube_id: string
+          cube_name: string
+          id: string
+          message: string | null
+          recipient: string
+          recipient_type: string
+          sender_email: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          claimed?: boolean
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          cube_cost: number
+          cube_id: string
+          cube_name: string
+          id?: string
+          message?: string | null
+          recipient: string
+          recipient_type: string
+          sender_email: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          claimed?: boolean
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          cube_cost?: number
+          cube_id?: string
+          cube_name?: string
+          id?: string
+          message?: string | null
+          recipient?: string
+          recipient_type?: string
+          sender_email?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           best_score: number
@@ -181,6 +232,7 @@ export type Database = {
           created_at: string
           equipped_cube_id: string | null
           id: string
+          preferred_device: string | null
           protection_rooms_left: number
           shard_multiplier_rooms_left: number
           speed_boost_rooms_left: number
@@ -195,6 +247,7 @@ export type Database = {
           created_at?: string
           equipped_cube_id?: string | null
           id?: string
+          preferred_device?: string | null
           protection_rooms_left?: number
           shard_multiplier_rooms_left?: number
           speed_boost_rooms_left?: number
@@ -209,6 +262,7 @@ export type Database = {
           created_at?: string
           equipped_cube_id?: string | null
           id?: string
+          preferred_device?: string | null
           protection_rooms_left?: number
           shard_multiplier_rooms_left?: number
           speed_boost_rooms_left?: number

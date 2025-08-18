@@ -11,6 +11,8 @@ import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
+import { GiftModal } from './GiftModal';
+import { DeviceSelectionModal } from './DeviceSelectionModal';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,16 +20,19 @@ import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 
+
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
-  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
+  const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData, showDeviceSelection, setDevicePreference, setShowDeviceSelection } = useUserDataStore();
+  
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [guestDeviceSelection, setGuestDeviceSelection] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,17 +44,35 @@ export const CleanPerceptionShift = () => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('🔔 Auth state change:', event, 'User:', session?.user?.email);
+        console.log('🔔 Auth state change EVENT:', event);
+        console.log('🔔 Auth state change SESSION:', session);
+        console.log('🔔 Auth state change USER:', session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Safety redirect: If user authenticated but on wrong domain, redirect to game homepage
+        if (session?.user && window.location.hostname !== 'perceptionshift.zixlestudios.com') {
+          console.log('🔄 Redirecting to game homepage after authentication');
+          window.location.href = 'https://perceptionshift.zixlestudios.com';
+          return;
+        }
+        
         // Auto-sync user data when authenticated
         if (session?.user) {
-          console.log('✅ User authenticated:', session.user.email);
+          console.log('✅ User authenticated in auth state change:', session.user.email);
           console.log('📋 User ID:', session.user.id);
+          console.log('🔄 Setting user in store...');
           
           // Give the user data store the authenticated user
           setUserData(session.user);
+          
+          // Force show device selection for all authenticated users (temporary for debugging)
+          console.log('🎯 Forcing device selection modal to show...');
+          setTimeout(() => {
+            console.log('⏰ Timeout triggered - setting device selection to true');
+            setShowDeviceSelection(true);
+          }, 500);
           
           // Auto-navigate to menu after successful auth, with a small delay
           setTimeout(() => {
@@ -125,16 +148,28 @@ export const CleanPerceptionShift = () => {
       if (!mounted) return;
       
       console.log('🔍 Initial session check:', session?.user?.email || 'No user');
+      console.log('🔍 Session details:', session);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         console.log('👤 Existing session found for:', session.user.email);
+        console.log('🔄 Setting user data from existing session...');
         setUserData(session.user);
+        
+        // Force show device selection for authenticated users
+        console.log('🎯 Forcing device selection from existing session...');
+        setTimeout(() => {
+          console.log('⏰ Device selection timeout from existing session');
+          setShowDeviceSelection(true);
+        }, 1000);
       } else {
         console.log('🚫 No existing session found');
       }
       
+      setLoading(false);
+    }).catch(error => {
+      console.error('❌ Error checking session:', error);
       setLoading(false);
     });
 
@@ -157,9 +192,27 @@ export const CleanPerceptionShift = () => {
       console.log('✅ Guest mode activated');
       setIsGuest(true);
       setCurrentScreen('menu');
+      
+      // Check if guest has device preference, if not show selection
+      const guestDevicePreference = localStorage.getItem('guestDevicePreference');
+      if (!guestDevicePreference) {
+        setGuestDeviceSelection(true);
+      }
     } else {
       // Regular authenticated user flow
       setCurrentScreen('menu');
+    }
+  };
+
+  // Handle device selection for both authenticated and guest users
+  const handleDeviceSelection = async (deviceType: 'desktop' | 'mobile' | 'tablet') => {
+    if (isGuest) {
+      // Store guest device preference in localStorage
+      localStorage.setItem('guestDevicePreference', deviceType);
+      setGuestDeviceSelection(false);
+    } else {
+      // Use the store method for authenticated users
+      await setDevicePreference(deviceType);
     }
   };
 
@@ -173,6 +226,12 @@ export const CleanPerceptionShift = () => {
       // Deduct shards and add cube to inventory
       await updateShards(-cost);
       await addCubeToInventory(itemId);
+      
+      // Also update the game store shards to sync the UI
+      const { totalShards: currentGameShards } = useGameStore.getState();
+      useGameStore.setState({ 
+        totalShards: Math.max(0, currentGameShards - cost) 
+      });
       
       console.log('✅ Purchase successful!');
       
@@ -208,14 +267,29 @@ export const CleanPerceptionShift = () => {
 
   // Show main menu for authenticated users or guests
   if (currentScreen === 'menu') {
+    console.log('🔍 MENU SCREEN Debug:');
+    console.log('  - showDeviceSelection:', showDeviceSelection);
+    console.log('  - guestDeviceSelection:', guestDeviceSelection);
+    console.log('  - user exists:', !!user);
+    console.log('  - isGuest:', isGuest);
+    console.log('  - user email:', user?.email);
+    
     return (
-      <MainMenu
-        onPlay={() => setCurrentScreen('game')}
-        onLeaderboard={() => setCurrentScreen('leaderboard')}
-        onShop={() => setCurrentScreen('shop')}
-        onInventory={() => setCurrentScreen('inventory')}
-        totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
-      />
+      <>
+        <MainMenu
+          onPlay={() => setCurrentScreen('game')}
+          onLeaderboard={() => setCurrentScreen('leaderboard')}
+          onShop={() => setCurrentScreen('shop')}
+          onInventory={() => setCurrentScreen('inventory')}
+          totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
+        />
+        
+        {/* Device Selection Modal - Show for both authenticated and guest users */}
+        <DeviceSelectionModal
+          isOpen={showDeviceSelection || guestDeviceSelection}
+          onDeviceSelect={handleDeviceSelection}
+        />
+      </>
     );
   }
 
@@ -295,21 +369,72 @@ export const CleanPerceptionShift = () => {
         </div>
       </div>
 
-      {/* Game Container */}
-      <div className="relative bg-game-surface border border-game-border rounded-lg p-4 shadow-2xl">
-        <div style={{ width: '800px', height: '600px', position: 'relative' }}>
+      {/* Game Container - Responsive */}
+      <div className="relative bg-game-surface border border-game-border rounded-lg p-2 md:p-4 shadow-2xl w-full max-w-6xl">
+        <div className="w-full aspect-[4/3] max-w-[800px] max-h-[600px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="mt-4 text-center text-game-text-dim text-xs max-w-md mx-auto font-mono">
-        <p>Move with WASD or arrow keys • Jump with W/Up/Space • Collect golden shards for currency</p>
-        <p className="mt-2 text-perception text-xs">
+      {/* Controls Instructions - Prominent and Easy */}
+      <div className="mt-4 space-y-3 text-center max-w-2xl mx-auto px-4">
+        {/* Desktop Controls */}
+        <div className="hidden md:block bg-game-surface/80 border border-game-border rounded-lg p-4">
+          <h3 className="text-perception font-bold text-lg mb-3 font-mono">HOW TO PLAY</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">MOVE:</span>
+                <span className="text-game-text">WASD or Arrow Keys</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">JUMP:</span>
+                <span className="text-game-text">W, ↑, or Space</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">AIM:</span>
+                <span className="text-game-text">Move Mouse</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+                <span className="text-perception font-bold">GOAL:</span>
+                <span className="text-game-text">Collect ⬟ Shards</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Controls */}
+        <div className="block md:hidden bg-game-surface/80 border border-game-border rounded-lg p-4">
+          <h3 className="text-perception font-bold text-lg mb-3 font-mono">HOW TO PLAY</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">MOVE & JUMP:</span>
+              <span className="text-game-text">Use Joystick (Bottom Left)</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">AIM CURSOR:</span>
+              <span className="text-game-text">Touch Anywhere on Screen</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 bg-game-bg/50 rounded p-2">
+              <span className="text-perception font-bold">GOAL:</span>
+              <span className="text-game-text">Collect ⬟ Golden Shards</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-perception text-sm font-mono animate-pulse">
           💡 Complete rooms to earn shards and climb the global leaderboard!
         </p>
       </div>
+
+      {/* Device Selection Modal - Show for both authenticated and guest users */}
+      <DeviceSelectionModal
+        isOpen={showDeviceSelection || guestDeviceSelection}
+        onDeviceSelect={handleDeviceSelection}
+      />
     </div>
   );
 };

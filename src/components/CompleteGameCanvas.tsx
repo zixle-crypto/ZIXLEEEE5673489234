@@ -2,14 +2,18 @@
  * Complete game with room progression and ambiguous tiles
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { createRoom, Room, Tile } from '@/lib/roomSystem';
+import { TouchControls } from './TouchControls';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const CompleteGameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysRef = useRef<Set<string>>(new Set());
+  const [touchMovement, setTouchMovement] = useState({ left: false, right: false, up: false });
+  const isMobile = useIsMobile();
   
   const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 24, height: 24 });
   const cursorRef = useRef({ x: 400, y: 300 });
@@ -62,6 +66,16 @@ export const CompleteGameCanvas = () => {
     updateCursor(x, y);
   }, [updateCursor]);
 
+  // Touch control handlers
+  const handleTouchMovement = useCallback((movement: { left: boolean; right: boolean; up: boolean }) => {
+    setTouchMovement(movement);
+  }, []);
+
+  const handleTouchCursor = useCallback((x: number, y: number) => {
+    cursorRef.current = { x, y };
+    updateCursor(x, y);
+  }, [updateCursor]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -71,8 +85,19 @@ export const CompleteGameCanvas = () => {
 
     console.log('🎮 Setting up complete game with room progression');
 
-    canvas.width = 800;
-    canvas.height = 600;
+    // Set up responsive canvas size
+    const resizeCanvas = () => {
+      const container = canvas.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        console.log(`📏 Canvas resized to ${canvas.width}x${canvas.height}`);
+      }
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     // Initial sync with store state
     playerRef.current = { ...player };
@@ -96,15 +121,15 @@ export const CompleteGameCanvas = () => {
         tile.isAttended = calculateAttention(tile, cursorRef.current);
       });
 
-      // Handle input
+      // Handle input (keyboard + touch)
       player.velX = 0;
-      if (keys.has('KeyA') || keys.has('ArrowLeft')) {
+      if (keys.has('KeyA') || keys.has('ArrowLeft') || touchMovement.left) {
         player.velX = -5;
       }
-      if (keys.has('KeyD') || keys.has('ArrowRight')) {
+      if (keys.has('KeyD') || keys.has('ArrowRight') || touchMovement.right) {
         player.velX = 5;
       }
-      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space')) && player.onGround) {
+      if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space') || touchMovement.up) && player.onGround) {
         player.velY = -12;
         player.onGround = false;
       }
@@ -171,16 +196,17 @@ export const CompleteGameCanvas = () => {
         }
       });
 
-      // Ground collision - fix invisible wall at edges
-      if (player.y + player.height >= 576) { // Floor at y=576 instead of variable
-        player.y = 576 - player.height;
+      // Ground collision - responsive to canvas height
+      const groundY = canvas.height * 0.96; // 96% down the canvas
+      if (player.y + player.height >= groundY) {
+        player.y = groundY - player.height;
         player.velY = 0;
         player.onGround = true;
         onPlatform = true;
       }
 
-      // Keep in bounds - fix side wall collision
-      player.x = Math.max(0, Math.min(800 - player.width, player.x));
+      // Keep in bounds - responsive to canvas width
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
 
       // Check shard collection
       room.shards = room.shards.filter((shard, index) => {
@@ -210,8 +236,9 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Death condition - fall damage (die when hitting ground level)
-      if (player.y > 540) { // Die when falling to ground level, not way below screen
+      // Death condition - fall damage (responsive)
+      const deathY = canvas.height * 0.9; // 90% down the canvas
+      if (player.y > deathY) {
         console.log('💀 Player fell to death at y:', player.y);
         playerDie();
         return;
@@ -224,7 +251,7 @@ export const CompleteGameCanvas = () => {
       
       // Clear canvas
       ctx.fillStyle = '#1a1f2e';
-      ctx.fillRect(0, 0, 800, 600);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Draw platforms
       ctx.fillStyle = '#2a2f3e';
@@ -347,9 +374,10 @@ export const CompleteGameCanvas = () => {
         ctx.fill();
       }
 
-      // Draw UI
+      // Draw UI - responsive font size
       ctx.fillStyle = '#ffffff';
-      ctx.font = '16px monospace';
+      const fontSize = Math.max(12, Math.min(16, canvas.width / 50));
+      ctx.font = `${fontSize}px monospace`;
       ctx.fillText(`Room ${roomNumberRef.current}/100 | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
       if (roomNumberRef.current <= 100) {
         const difficulty = Math.floor((roomNumberRef.current - 1) / 10) + 1;
@@ -372,6 +400,7 @@ export const CompleteGameCanvas = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('mousemove', handleMouseMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -388,19 +417,23 @@ export const CompleteGameCanvas = () => {
     console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
   }, [player.x, player.y, currentRoom.id, roomsCleared, isGameOver, isPlaying]); // Added isGameOver and isPlaying to ensure respawn sync
 
-  return (
-    <div className="w-full h-full flex items-center justify-center">
+    return (
+    <div className="w-full h-full flex items-center justify-center relative">
       <canvas
         ref={canvasRef}
-        className={`border border-game-border bg-game-bg rounded-lg ${
-          isPlaying && !isPaused && !isGameOver ? 'cursor-none' : 'cursor-default'
+        className={`border border-game-border bg-game-bg rounded-lg w-full h-full ${
+          isPlaying && !isPaused && !isGameOver && !isMobile ? 'cursor-none' : 'cursor-default'
         }`}
         style={{
-          width: '800px',
-          height: '600px',
           display: 'block',
           backgroundColor: '#1a1f2e'
         }}
+      />
+      
+      <TouchControls
+        onMovementChange={handleTouchMovement}
+        onCursorMove={handleTouchCursor}
+        isVisible={isPlaying && !isPaused && !isGameOver}
       />
     </div>
   );
