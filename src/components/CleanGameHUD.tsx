@@ -30,25 +30,27 @@ export const GameHUD = () => {
 
   return (
     <div className="absolute inset-0 pointer-events-none font-mono">
-      {/* Top HUD Bar - Compact */}
-      <div className="flex justify-between items-start p-2">
-        {/* Left: Score & Shards - Smaller */}
-        <div className="flex flex-col gap-1">
-          <div className="bg-hud-bg/90 border border-hud-border rounded p-2 backdrop-blur-sm pointer-events-auto">
-            <div className="flex flex-col">
-              <div className="text-perception text-xs font-mono">SCORE</div>
-              <div className="text-game-text text-sm font-bold">
+      {/* Top HUD Bar */}
+      <div className="flex justify-between items-start p-4">
+        {/* Left: Score & Shards */}
+        <div className="flex flex-col gap-2">
+          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+            <div className="flex flex-col gap-1">
+              <div className="text-perception text-sm font-mono">
+                SCORE
+              </div>
+              <div className="text-game-text text-lg font-bold">
                 {score.toLocaleString()}
               </div>
             </div>
           </div>
           
-          <div className="bg-hud-bg/90 border border-hud-border rounded p-2 backdrop-blur-sm pointer-events-auto">
-            <div className="flex items-center gap-1">
-              <span className="text-perception text-sm">⬟</span>
+          <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm pointer-events-auto">
+            <div className="flex items-center gap-2">
+              <span className="text-perception text-lg">⬟</span>
               <div className="flex flex-col">
-                <div className="text-perception text-xs font-mono">SHARDS</div>
-                <div className="text-game-text text-sm font-bold">
+                <div className="text-perception text-sm font-mono">SHARDS</div>
+                <div className="text-game-text text-lg font-bold">
                   {totalShards.toLocaleString()}
                 </div>
               </div>
@@ -56,9 +58,9 @@ export const GameHUD = () => {
           </div>
         </div>
 
-        {/* Right: Room Count & Weekly Seed - Smaller */}
-        <div className="bg-hud-bg/90 border border-hud-border rounded p-2 backdrop-blur-sm text-right">
-          <div className="text-perception text-xs font-mono">
+        {/* Right: Room Count & Weekly Seed */}
+        <div className="bg-hud-bg/90 border border-hud-border rounded-lg p-3 backdrop-blur-sm text-right">
+          <div className="text-perception text-sm font-mono">
             ROOM {roomsCleared + 1}
           </div>
           <div className="text-game-text-dim text-xs">
