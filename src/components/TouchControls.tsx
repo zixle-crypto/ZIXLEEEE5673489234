@@ -40,7 +40,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
     const deltaY = clientY - centerY;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    const maxDistance = rect.width / 2 - 24; // Account for larger knob size
+    const maxDistance = rect.width / 2 - 16; // Account for knob size
     const limitedDistance = Math.min(distance, maxDistance);
 
     let finalX = deltaX;
@@ -121,12 +121,12 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         }}
       />
       
-      {/* Virtual Joystick - Larger and more responsive */}
-      <div className="absolute bottom-6 left-6 z-50">
+      {/* Virtual Joystick - Compact size */}
+      <div className="absolute bottom-4 left-4 z-50">
         <div
           ref={joystickRef}
-          className={`relative w-32 h-32 rounded-full border-4 border-hud-border bg-hud-bg/90 transition-all duration-200 ${
-            isPressed ? 'scale-110 shadow-glow-attention border-perception' : 'shadow-shadow-game'
+          className={`relative w-20 h-20 rounded-full border-2 border-hud-border bg-hud-bg/90 transition-all duration-200 ${
+            isPressed ? 'scale-105 shadow-glow-attention border-perception' : 'shadow-shadow-game'
           }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -135,7 +135,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         >
           <div
             ref={knobRef}
-            className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 shadow-lg ${
+            className={`absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-gradient-perception transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100 shadow-lg ${
               isPressed ? 'scale-110 shadow-glow-attention' : 'shadow-shadow-game'
             }`}
             style={{ touchAction: 'none' }}
