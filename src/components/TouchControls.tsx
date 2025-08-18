@@ -163,13 +163,6 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         <div className="text-center mt-2 text-game-text text-sm font-bold">MOVE</div>
       </div>
 
-      {/* Improved instructions overlay with better positioning */}
-      <div className="absolute top-4 left-4 right-4 text-center bg-hud-bg/80 backdrop-blur-sm rounded-lg p-3 border border-hud-border z-40">
-        <div className="text-game-text text-sm font-bold mb-1">MOBILE CONTROLS</div>
-        <div className="text-game-text-dim text-xs">
-          <span className="text-perception">Touch screen</span> to aim cursor • <span className="text-perception">Use joystick</span> to move & jump
-        </div>
-      </div>
     </>
   );
 };
