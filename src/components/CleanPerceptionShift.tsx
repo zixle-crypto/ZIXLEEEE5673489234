@@ -371,9 +371,9 @@ export const CleanPerceptionShift = () => {
         </div>
       </div>
 
-      {/* Game Container - Responsive */}
-      <div className="relative bg-game-surface border border-game-border rounded-lg p-2 md:p-4 shadow-2xl w-full max-w-6xl">
-        <div className="w-full aspect-[4/3] max-w-[800px] max-h-[600px] mx-auto relative">
+      {/* Game Container - Larger for mobile */}
+      <div className="relative bg-game-surface border border-game-border rounded-lg p-1 md:p-4 shadow-2xl w-full max-w-7xl">
+        <div className="w-full aspect-[4/3] max-w-[1000px] max-h-[750px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
         </div>
