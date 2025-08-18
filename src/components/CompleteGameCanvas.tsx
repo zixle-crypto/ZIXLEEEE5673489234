@@ -15,7 +15,7 @@ export const CompleteGameCanvas = () => {
   const [touchMovement, setTouchMovement] = useState({ left: false, right: false, up: false });
   const isMobile = useIsMobile();
   
-  const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 24, height: 24 });
+  const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 32, height: 32 });
   const cursorRef = useRef({ x: 400, y: 300 });
   const currentRoomRef = useRef<Room>(createRoom(1));
   const roomNumberRef = useRef(1);
@@ -68,6 +68,7 @@ export const CompleteGameCanvas = () => {
 
   // Touch control handlers
   const handleTouchMovement = useCallback((movement: { left: boolean; right: boolean; up: boolean }) => {
+    console.log('🕹️ Touch movement received:', movement);
     setTouchMovement(movement);
   }, []);
 
@@ -134,13 +135,16 @@ export const CompleteGameCanvas = () => {
       player.velX = 0;
       if (keys.has('KeyA') || keys.has('ArrowLeft') || touchMovement.left) {
         player.velX = -5;
+        console.log('⬅️ Moving left, velX:', player.velX);
       }
       if (keys.has('KeyD') || keys.has('ArrowRight') || touchMovement.right) {
         player.velX = 5;
+        console.log('➡️ Moving right, velX:', player.velX);
       }
       if ((keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space') || touchMovement.up) && player.onGround) {
         player.velY = -12;
         player.onGround = false;
+        console.log('⬆️ Jumping, velY:', player.velY);
       }
 
       // Apply physics
@@ -322,15 +326,28 @@ export const CompleteGameCanvas = () => {
         }
       });
 
-      // Draw player
+      // Draw player (make it much more visible)
       const player = playerRef.current;
+      
+      // Make player larger and more visible
+      const playerSize = Math.max(32, Math.min(canvas.width / 25, 48)); // Responsive size
+      
+      // Draw main player body
       ctx.fillStyle = '#20d4d4';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.fillRect(player.x, player.y, playerSize, playerSize);
 
+      // Add glow effect
       ctx.shadowColor = '#20d4d4';
-      ctx.shadowBlur = 10;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.shadowBlur = 15;
+      ctx.fillRect(player.x, player.y, playerSize, playerSize);
       ctx.shadowBlur = 0;
+      
+      // Add white border for visibility
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(player.x, player.y, playerSize, playerSize);
+      
+      console.log('🎯 Player drawn at:', player.x, player.y, 'size:', playerSize);
 
       // Draw shards
       const time = Date.now() * 0.005;
