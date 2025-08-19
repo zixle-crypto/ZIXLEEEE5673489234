@@ -53,30 +53,27 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
     setPurchasingCrate(crate.id);
     
     try {
-      console.log('🛒 Creating checkout for crate:', crate.name);
+      console.log('🛒 Creating crate checkout for:', crate.name);
       
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      // Map crate type to our pricing system
+      const crateTypeMapping = {
+        'starter_crate': 'basic',
+        'adventure_crate': 'rare', 
+        'hero_crate': 'epic',
+        'champion_crate': 'legendary',
+        'ultimate_crate': 'premium'
+      };
+      
+      const mappedType = crateTypeMapping[crate.id as keyof typeof crateTypeMapping] || 'basic';
+      
+      const { data, error } = await supabase.functions.invoke('create-crate-payment', {
         body: {
-          priceData: {
-            currency: 'usd',
-            product_data: {
-              name: crate.name,
-              description: crate.description,
-              images: [] // Could add crate images here
-            },
-            unit_amount: crate.price,
-          },
-          quantity: 1,
-          metadata: {
-            crate_id: crate.id,
-            crate_name: crate.name,
-            spin_count: crate.spinCount.toString()
-          }
+          crateType: mappedType
         }
       });
 
       if (error) {
-        console.error('Checkout creation failed:', error);
+        console.error('Crate checkout creation failed:', error);
         toast({
           title: "Purchase Failed",
           description: error.message || "Failed to create checkout session",
@@ -90,15 +87,15 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
         window.open(data.url, '_blank');
         
         toast({
-          title: "Checkout Created",
-          description: "Opening payment window...",
+          title: "🛒 Checkout Created",
+          description: "Opening payment window for your crate purchase...",
         });
       }
 
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error('Crate purchase error:', error);
       toast({
-        title: "Purchase Failed",
+        title: "Purchase Failed", 
         description: "An unexpected error occurred",
         variant: "destructive"
       });
@@ -287,12 +284,44 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
                 {/* Price and Actions */}
                 <div className="flex items-center justify-between">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">
-                      {formatPrice(crate.price)}
-                    </div>
-                    <div className="text-xs text-game-text-dim">
-                      USD
-                    </div>
+                    {/* Show attractive pricing with marketing */}
+                    {crate.id === 'starter_crate' && (
+                      <>
+                        <div className="text-xs text-blue-400 font-bold">🎯 BEST FOR BEGINNERS</div>
+                        <div className="text-2xl font-bold text-green-400">$2.99</div>
+                      </>
+                    )}
+                    {crate.id === 'adventure_crate' && (
+                      <>
+                        <div className="text-xs text-yellow-400 font-bold">⭐ MOST POPULAR</div>
+                        <div className="text-2xl font-bold text-green-400">$4.99</div>
+                      </>
+                    )}
+                    {crate.id === 'hero_crate' && (
+                      <>
+                        <div className="text-xs text-red-400 font-bold">🔥 LIMITED TIME</div>
+                        <div className="text-2xl font-bold text-green-400">$9.99</div>
+                      </>
+                    )}
+                    {crate.id === 'champion_crate' && (
+                      <>
+                        <div className="text-xs text-purple-400 font-bold">💎 BEST VALUE</div>
+                        <div className="text-2xl font-bold text-green-400">$19.99</div>
+                        <div className="text-xs text-game-text-dim line-through">$24.99</div>
+                      </>
+                    )}
+                    {crate.id === 'ultimate_crate' && (
+                      <>
+                        <div className="text-xs text-yellow-400 font-bold">👑 PREMIUM</div>
+                        <div className="text-2xl font-bold text-green-400">$29.99</div>
+                      </>
+                    )}
+                    {!['starter_crate', 'adventure_crate', 'hero_crate', 'champion_crate', 'ultimate_crate'].includes(crate.id) && (
+                      <div className="text-2xl font-bold text-green-400">
+                        {formatPrice(crate.price)}
+                      </div>
+                    )}
+                    <div className="text-xs text-game-text-dim">USD</div>
                   </div>
                   
                   <div className="flex gap-2">
