@@ -86,7 +86,11 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
   };
 
   const handlePowerUpPurchase = async (powerUp: any) => {
+    console.log('🛒 Starting purchase for power-up:', powerUp.name, 'ID:', powerUp.id);
+    console.log('💰 Current shards:', totalShards, 'Required:', powerUp.cost_shards);
+    
     if (totalShards < powerUp.cost_shards) {
+      console.log('❌ Not enough shards for purchase');
       toast({
         title: "Not Enough Shards",
         description: `You need ${powerUp.cost_shards} shards to buy this power-up`,
@@ -95,7 +99,10 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
       return;
     }
 
+    console.log('✅ Sufficient shards, proceeding with purchase...');
     const success = await purchasePowerUp(powerUp.id);
+    console.log('🔄 Purchase result:', success);
+    
     if (success) {
       // Trigger onPurchase callback to update totalShards in parent component
       onPurchase(powerUp.cost_shards);
@@ -105,6 +112,7 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
         description: `${powerUp.name} added to your inventory for ${powerUp.cost_shards} shards`,
       });
     } else {
+      console.error('❌ Purchase failed - checking logs above for details');
       toast({
         title: "Purchase Failed",
         description: "Could not complete the purchase. Please try again.",
