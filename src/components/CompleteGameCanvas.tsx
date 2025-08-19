@@ -70,19 +70,14 @@ export const CompleteGameCanvas = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    console.log('🎮 Setting up complete game with room progression');
-
     // Set up responsive canvas size
     const resizeCanvas = () => {
       const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
-        // Ensure minimum canvas size
-        const minWidth = 320;
-        const minHeight = 480;
-        canvas.width = Math.max(rect.width || minWidth, minWidth);
-        canvas.height = Math.max(rect.height || minHeight, minHeight);
-        console.log(`📏 Canvas resized to ${canvas.width}x${canvas.height}`);
+        // Fixed canvas size for better performance
+        canvas.width = 800;
+        canvas.height = 600;
         
         // Force canvas to be visible with explicit styling
         canvas.style.width = '100%';
@@ -191,8 +186,8 @@ export const CompleteGameCanvas = () => {
         }
       });
 
-      // Ground collision - responsive to canvas height
-      const groundY = canvas.height * 0.96; // 96% down the canvas
+      // Ground collision - fixed height for better performance
+      const groundY = 576; // Fixed ground position
       if (player.y + player.height >= groundY) {
         player.y = groundY - player.height;
         player.velY = 0;
@@ -200,8 +195,8 @@ export const CompleteGameCanvas = () => {
         onPlatform = true;
       }
 
-      // Keep in bounds - responsive to canvas width
-      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      // Keep in bounds - fixed width
+      player.x = Math.max(0, Math.min(768, player.x));
 
       // Check shard collection
       room.shards = room.shards.filter((shard, index) => {
@@ -231,10 +226,9 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Death condition - fall damage (responsive)
-      const deathY = canvas.height * 0.9; // 90% down the canvas
+      // Death condition - fall damage (fixed)
+      const deathY = 650; // Fixed death position
       if (player.y > deathY) {
-        console.log('💀 Player fell to death at y:', player.y);
         playerDie();
         return;
       }
@@ -245,9 +239,9 @@ export const CompleteGameCanvas = () => {
       // Clear canvas
       const room = currentRoomRef.current;
       
-      // Clear canvas
+      // Clear canvas with fixed size
       ctx.fillStyle = '#1a1f2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, 800, 600);
 
       // Draw platforms
       ctx.fillStyle = '#2a2f3e';
@@ -308,11 +302,9 @@ export const CompleteGameCanvas = () => {
         }
       });
 
-      // Draw player (make it much more visible)
+      // Draw player with fixed size for performance
       const player = playerRef.current;
-      
-      // Make player larger and more visible
-      const playerSize = Math.max(32, Math.min(canvas.width / 25, 48)); // Responsive size
+      const playerSize = 32; // Fixed size for better performance
       
       // Draw main player body
       ctx.fillStyle = '#20d4d4';
@@ -383,10 +375,9 @@ export const CompleteGameCanvas = () => {
         ctx.fill();
       }
 
-      // Draw UI - responsive font size
+      // Draw UI with fixed font size
       ctx.fillStyle = '#ffffff';
-      const fontSize = Math.max(12, Math.min(16, canvas.width / 50));
-      ctx.font = `${fontSize}px monospace`;
+      ctx.font = '16px Orbitron, monospace';
       ctx.fillText(`Room ${roomNumberRef.current}/100 | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
       if (roomNumberRef.current <= 100) {
         const difficulty = Math.floor((roomNumberRef.current - 1) / 10) + 1;
@@ -396,15 +387,21 @@ export const CompleteGameCanvas = () => {
       }
     };
 
-    // Game loop - remove problematic sync logic
-    const gameLoop = () => {
-      updateGame();
-      render();
+    // Optimized game loop with fixed timestep
+    let lastTime = 0;
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+    
+    const gameLoop = (currentTime: number) => {
+      if (currentTime - lastTime >= frameInterval) {
+        updateGame();
+        render();
+        lastTime = currentTime;
+      }
       animationRef.current = requestAnimationFrame(gameLoop);
     };
 
-    console.log('🚀 Starting complete game with room progression');
-    gameLoop();
+    gameLoop(0);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
