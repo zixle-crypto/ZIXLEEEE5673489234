@@ -163,7 +163,7 @@ export const CleanPerceptionShift = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setUserData]);
+  }, []); // Remove setUserData dependency to prevent render loop
 
   useEffect(() => {
     if (currentScreen === 'game') {
@@ -174,7 +174,7 @@ export const CleanPerceptionShift = () => {
         console.log('🔄 Checking game state after init:', { isPlaying, isPaused, isGameOver });
       }, 100);
     }
-  }, [initGame, currentScreen, isPlaying, isPaused, isGameOver]);
+  }, [currentScreen]); // Only depend on currentScreen to prevent render loop
 
   const handleUserComplete = (userEmail: string) => {
     console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);

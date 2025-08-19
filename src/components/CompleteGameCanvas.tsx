@@ -242,7 +242,7 @@ export const CompleteGameCanvas = () => {
 
     // Render game
     const render = () => {
-      console.log('🎨 Render called - isPlaying:', isPlaying, 'canvas dims:', canvas?.width, 'x', canvas?.height);
+      // Clear canvas
       const room = currentRoomRef.current;
       
       // Clear canvas
@@ -329,7 +329,7 @@ export const CompleteGameCanvas = () => {
       ctx.lineWidth = 3;
       ctx.strokeRect(player.x, player.y, playerSize, playerSize);
       
-      console.log('🎯 Player drawn at:', player.x, player.y, 'size:', playerSize);
+      // Draw shards
 
       // Draw shards
       const time = Date.now() * 0.005;
@@ -424,7 +424,7 @@ export const CompleteGameCanvas = () => {
     currentRoomRef.current = { ...currentRoom };
     roomNumberRef.current = roomsCleared + 1;
     console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
-  }, [player.x, player.y, currentRoom.id, roomsCleared, isGameOver, isPlaying]); // Added isGameOver and isPlaying to ensure respawn sync
+  }, [currentRoom.id, roomsCleared]); // Only sync on room changes, not player position
 
     return (
     <div className="w-full h-full flex items-center justify-center relative">
