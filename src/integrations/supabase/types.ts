@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      crate_purchases: {
+        Row: {
+          amount: number
+          bonus_shards: number | null
+          crate_type: string
+          created_at: string
+          cubes_awarded: Json | null
+          currency: string
+          id: string
+          processed_at: string | null
+          status: string
+          stripe_session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bonus_shards?: number | null
+          crate_type: string
+          created_at?: string
+          cubes_awarded?: Json | null
+          currency?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          stripe_session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bonus_shards?: number | null
+          crate_type?: string
+          created_at?: string
+          cubes_awarded?: Json | null
+          currency?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          stripe_session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_usage: {
         Row: {
           created_at: string

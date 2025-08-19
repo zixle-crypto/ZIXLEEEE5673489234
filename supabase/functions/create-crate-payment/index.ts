@@ -115,6 +115,21 @@ serve(async (req) => {
       }
     });
 
+    // Record the purchase attempt in our database
+    const supabaseService = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    await supabaseService.from("crate_purchases").insert({
+      user_id: user.id,
+      stripe_session_id: session.id,
+      crate_type: crateType,
+      amount: crateInfo.price,
+      status: "pending"
+    });
+
     console.log(`Crate payment session created for user ${user.email}, crate: ${crateType}`);
 
     return new Response(JSON.stringify({ 

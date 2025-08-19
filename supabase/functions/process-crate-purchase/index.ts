@@ -163,6 +163,17 @@ serve(async (req) => {
       console.error('Error adding bonus shards:', shardsError);
     }
 
+    // Update the purchase record
+    const { error: updateError } = await supabase
+      .from('crate_purchases')
+      .update({
+        status: 'completed',
+        cubes_awarded: generatedCubes,
+        bonus_shards: bonusShards,
+        processed_at: new Date().toISOString()
+      })
+      .eq('stripe_session_id', sessionId);
+
     console.log(`Crate purchase processed successfully. Added ${generatedCubes.length} cubes and ${bonusShards} shards`);
 
     return new Response(JSON.stringify({ 
