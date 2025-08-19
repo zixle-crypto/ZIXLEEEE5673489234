@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Trophy, ShoppingBag, Package, Gem, MessageSquare } from 'lucide-react';
+import { Play, Trophy, ShoppingBag, Package, Gem, MessageSquare, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { FeedbackModal } from './FeedbackModal';
 
@@ -14,6 +14,7 @@ interface MainMenuProps {
   onShop: () => void;
   onInventory: () => void;
   onCrateShop: () => void;
+  onEngagementHub: () => void;
   totalShards: number;
 }
 
@@ -23,6 +24,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onShop,
   onInventory,
   onCrateShop,
+  onEngagementHub,
   totalShards
 }) => {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -90,7 +92,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           LEADERBOARD
         </Button>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Button
             onClick={onShop}
             variant="outline"
@@ -116,6 +118,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           >
             <Package className="w-6 h-6" />
             INVENTORY
+          </Button>
+
+          <Button
+            onClick={onEngagementHub}
+            variant="outline"
+            className="h-16 border-red-400 text-red-400 hover:bg-red-400/10 font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
+          >
+            <Target className="w-6 h-6" />
+            CHALLENGES
           </Button>
         </div>
       </div>

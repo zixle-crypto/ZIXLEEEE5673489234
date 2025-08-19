@@ -11,6 +11,7 @@ import { Leaderboard } from './Leaderboard';
 import { MainMenu } from './MainMenu';
 import { Shop } from './Shop';
 import { Inventory } from './Inventory';
+import { EngagementHub } from './EngagementHub';
 import { GiftModal } from './GiftModal';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserDataStore } from '@/stores/userDataStore';
@@ -21,7 +22,7 @@ import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 import { CrateShop } from './CrateShop';
 
 
-type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop';
+type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop' | 'engagementHub';
 
 export const CleanPerceptionShift = () => {
   const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
@@ -243,6 +244,7 @@ export const CleanPerceptionShift = () => {
         onShop={() => setCurrentScreen('shop')}
         onInventory={() => setCurrentScreen('inventory')}
         onCrateShop={() => setCurrentScreen('crateShop')}
+        onEngagementHub={() => setCurrentScreen('engagementHub')}
         totalShards={gameStoreShards || (isGuest ? 0 : (gameData?.total_shards || 0))}
       />
     );
@@ -295,14 +297,23 @@ export const CleanPerceptionShift = () => {
     );
   }
 
+  if (currentScreen === 'engagementHub') {
+    return (
+      <EngagementHub
+        onBack={() => setCurrentScreen('menu')}
+        totalShards={gameStoreShards || (gameData?.total_shards || 0)}
+        onPurchase={handleShopPurchase}
+      />
+    );
+  }
+
   // Game screen
   return (
     <div className="min-h-screen bg-game-bg flex flex-col items-center justify-center p-4 font-mono">
-
       {/* Header with Game Title and Stats */}
       <div className="text-center mb-6 w-full max-w-4xl">
         <div className="flex items-center justify-between mb-4">
-          {/* Player Stats - Remove duplicate shard display since it's now in game HUD */}
+          {/* Player Stats */}
           <div className="flex items-center gap-4">
             {currentRank && (
               <div className="bg-game-surface border border-game-border rounded-lg px-4 py-2">
@@ -341,15 +352,13 @@ export const CleanPerceptionShift = () => {
         </div>
       </div>
 
-      {/* Game Container - Larger for mobile */}
+      {/* Game Container */}
       <div className="relative bg-game-surface border border-game-border rounded-lg p-1 md:p-4 shadow-2xl w-full max-w-7xl">
         <div className="w-full aspect-[4/3] max-w-[1000px] max-h-[750px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
         </div>
       </div>
-
-
     </div>
   );
 };
