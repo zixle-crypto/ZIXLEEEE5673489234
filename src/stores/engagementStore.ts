@@ -345,8 +345,18 @@ export const useEngagementStore = create<EngagementState>()(
 
       purchasePowerUp: async (powerUpId: string) => {
         try {
+          // Check authentication first
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            console.error('❌ User not authenticated');
+            return false;
+          }
+
           const powerUp = get().powerUps.find(p => p.id === powerUpId);
-          if (!powerUp) return false;
+          if (!powerUp) {
+            console.error('❌ Power-up not found');
+            return false;
+          }
 
           // Check if user has enough shards and deduct them
           const { useUserDataStore } = await import('@/stores/userDataStore');
@@ -357,9 +367,6 @@ export const useEngagementStore = create<EngagementState>()(
             return false;
           }
 
-          // Deduct shards first
-          await useUserDataStore.getState().updateShards(-powerUp.cost_shards);
-
           // Find existing user power-up or create new one
           const existingUserPowerUp = get().userPowerUps.find(up => up.power_up_id === powerUpId);
           const newQuantity = existingUserPowerUp ? existingUserPowerUp.quantity + 1 : 1;
@@ -367,7 +374,7 @@ export const useEngagementStore = create<EngagementState>()(
           const { data, error } = await supabase
             .from('user_power_ups')
             .upsert({
-              user_id: (await supabase.auth.getUser()).data.user?.id,
+              user_id: user.id,
               power_up_id: powerUpId,
               quantity: newQuantity
             }, {
@@ -375,12 +382,18 @@ export const useEngagementStore = create<EngagementState>()(
             })
             .select();
 
-          if (error) throw error;
+          if (error) {
+            console.error('❌ Database error:', error);
+            return false;
+          }
+
+          // Only deduct shards after successful database operation
+          await useUserDataStore.getState().updateShards(-powerUp.cost_shards);
           
           console.log(`💰 Power-up purchased: ${powerUp.name} - Cost: ${powerUp.cost_shards} shards`);
           
           // Reload user power-ups
-          get().loadUserPowerUps();
+          await get().loadUserPowerUps();
           return true;
         } catch (error) {
           console.error('Error purchasing power-up:', error);
