@@ -32,13 +32,40 @@ export const RARITY_CONFIG = {
   eternal: { dropRate: 0.002, multiplier: 100, color: '#10B981' }
 };
 
+// Unique name lists for each category
+const UNIQUE_NAMES = {
+  basic: ['Aiden', 'Zara', 'Kai', 'Luna', 'Rex', 'Nova', 'Sage', 'Echo', 'Vale', 'Flux', 'Orion', 'Vera', 'Zion', 'Mira', 'Dash', 'Cora', 'Vex', 'Nyx', 'Jax', 'Lux', 'Pike', 'Raven', 'Steel', 'Blaze', 'Storm', 'Frost', 'Gale', 'Ember', 'Mist', 'Stone', 'Bolt', 'Shade', 'Dawn', 'Dusk', 'Rain', 'Snow', 'Wind', 'Rock', 'Leaf', 'Sand', 'Clay', 'Ash', 'Rust', 'Mint', 'Sage', 'Teal', 'Gray', 'Blue', 'Rose', 'Gold'],
+  elemental: ['Ignis', 'Aqua', 'Terra', 'Ventus', 'Pyro', 'Hydro', 'Gaia', 'Zephyr', 'Flare', 'Tide', 'Quake', 'Breeze', 'Ember', 'Splash', 'Boulder', 'Gust', 'Spark', 'Wave', 'Cliff', 'Draft', 'Blaze', 'Current', 'Granite', 'Whisper', 'Inferno'],
+  geometric: ['Vertex', 'Facet', 'Apex', 'Edge', 'Prism', 'Vector', 'Angle', 'Radius', 'Diameter', 'Chord', 'Arc', 'Point', 'Line', 'Plane', 'Axis', 'Core', 'Node', 'Hub', 'Nexus', 'Peak'],
+  enhanced: ['Magnus', 'Vortex', 'Zenith', 'Prisma', 'Lumina', 'Nexus', 'Titan', 'Quantum', 'Stellar', 'Cosmic', 'Ethereal', 'Mystic', 'Radiant', 'Supreme', 'Prime', 'Ultra', 'Hyper', 'Mega', 'Giga', 'Tera'],
+  crystal: ['Quartz', 'Sapphire', 'Emerald', 'Ruby', 'Diamond', 'Topaz', 'Amethyst', 'Citrine', 'Garnet', 'Opal', 'Jade', 'Pearl', 'Amber', 'Onyx', 'Jasper', 'Agate', 'Beryl', 'Zircon', 'Peridot', 'Turquoise', 'Obsidian', 'Moonstone', 'Sunstone', 'Bloodstone', 'Crystal', 'Prism', 'Shard', 'Facet', 'Gleam', 'Shimmer', 'Sparkle', 'Glint', 'Shine', 'Luster', 'Glow', 'Radiance', 'Brilliance', 'Clarity', 'Purity'],
+  metallic: ['Forge', 'Alloy', 'Temper', 'Anvil', 'Hammer', 'Steel', 'Chrome', 'Titanium', 'Cobalt', 'Nickel', 'Zinc', 'Iron', 'Copper', 'Bronze', 'Silver'],
+  void: ['Abyss', 'Void', 'Null', 'Zero', 'Omega', 'Cipher', 'Shadow', 'Eclipse', 'Darkness', 'Oblivion', 'Nihil', 'Vacuum', 'Hollow', 'Empty', 'Blank', 'Silent', 'Hidden', 'Lost', 'Forgotten', 'Vanished', 'Faded', 'Erased', 'Wiped', 'Cleared', 'Gone', 'Missing', 'Absent', 'Vacant', 'Barren', 'Desolate'],
+  chaos: ['Havoc', 'Mayhem', 'Turmoil', 'Frenzy', 'Pandemonium', 'Bedlam', 'Anarchy', 'Discord', 'Entropy', 'Maelstrom', 'Vortex', 'Whirlwind', 'Typhoon', 'Hurricane', 'Cyclone', 'Tempest', 'Storm', 'Fury', 'Rage', 'Wrath', 'Madness', 'Insanity', 'Lunacy', 'Mania', 'Delirium'],
+  gemstone: ['Brilliant', 'Faceted', 'Polished', 'Cut', 'Refined', 'Pristine', 'Flawless', 'Perfect', 'Pure', 'Clear', 'Transparent', 'Luminous'],
+  ancient: ['Archon', 'Relic', 'Artifact', 'Legacy', 'Heritage', 'Chronicle', 'Saga', 'Legend', 'Myth', 'Fable', 'Lore', 'Tale', 'Story', 'History', 'Past', 'Old', 'Elder', 'Ancient', 'Primordial', 'Original', 'First', 'Initial', 'Beginning', 'Genesis', 'Origin'],
+  celestial: ['Solaris', 'Lunaris', 'Stellaris', 'Cometis', 'Nebulos', 'Galaxia', 'Cosmos', 'Universe', 'Infinity', 'Eternity'],
+  dragon: ['Draco', 'Wyrm', 'Drake', 'Wyvern', 'Serpent', 'Basilisk', 'Leviathan', 'Behemoth'],
+  prism: ['Spectrum', 'Rainbow', 'Refract', 'Reflect', 'Disperse', 'Diffract', 'Bend', 'Split', 'Divide', 'Separate', 'Break', 'Fracture', 'Shatter', 'Fragment', 'Piece', 'Part', 'Section', 'Segment', 'Portion', 'Component'],
+  divine: ['Zeus', 'Odin', 'Ra', 'Shiva', 'Amaterasu', 'Thor', 'Loki', 'Anubis', 'Horus', 'Isis', 'Freya', 'Balder', 'Tyr', 'Heimdall', 'Vidar'],
+  cosmic: ['Galaxy', 'Nebula', 'Quasar', 'Pulsar', 'Supernova', 'BlackHole', 'Wormhole', 'Stargate', 'Portal', 'Vortex', 'Infinity', 'Eternity', 'Forever', 'Always', 'Never'],
+  eternal: ['Alpha', 'Omega', 'Infinity', 'Eternity', 'Forever', 'Always', 'Never', 'Immortal', 'Undying', 'Everlasting']
+};
+
+// Helper function to get a unique name
+const getUniqueName = (category: string, index: number, prefix: string = '') => {
+  const names = UNIQUE_NAMES[category as keyof typeof UNIQUE_NAMES] || UNIQUE_NAMES.basic;
+  const name = names[index % names.length];
+  return prefix ? `${name} ${prefix}` : name;
+};
+
 // Generate massive cube library
 export const CUBE_LIBRARY: CubeTemplate[] = [
   // === COMMON CUBES (300+ varieties) ===
   // Basic Elements
   ...Array.from({ length: 50 }, (_, i) => ({
     id: `basic_${i + 1}`,
-    name: `Basic Cube ${i + 1}`,
+    name: `${getUniqueName('basic', i)} Basic Cube`,
     description: `Standard cube with basic properties. Series ${Math.floor(i / 10) + 1}.`,
     rarity: 'common' as CubeRarity,
     effect: { type: 'shard_multiplier' as const, value: 1.1 + (i * 0.01), duration: 2 },
@@ -50,7 +77,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['fire', 'water', 'earth', 'air'].flatMap((element, elemIndex) =>
     Array.from({ length: 25 }, (_, i) => ({
       id: `${element}_common_${i + 1}`,
-      name: `${element.charAt(0).toUpperCase() + element.slice(1)} Cube ${i + 1}`,
+      name: `${getUniqueName('elemental', i + elemIndex * 25)} ${element.charAt(0).toUpperCase() + element.slice(1)} Cube`,
       description: `A ${element}-infused cube with enhanced properties.`,
       rarity: 'common' as CubeRarity,
       element: element as any,
@@ -68,7 +95,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['cube', 'sphere', 'pyramid', 'prism', 'octahedron'].flatMap((shape, shapeIndex) =>
     Array.from({ length: 20 }, (_, i) => ({
       id: `${shape}_common_${i + 1}`,
-      name: `${shape.charAt(0).toUpperCase() + shape.slice(1)} ${i + 1}`,
+      name: `${getUniqueName('geometric', i + shapeIndex * 20)} ${shape.charAt(0).toUpperCase() + shape.slice(1)}`,
       description: `Geometric ${shape} with structural advantages.`,
       rarity: 'common' as CubeRarity,
       effect: { 
@@ -86,7 +113,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['fire', 'water', 'earth', 'air', 'light', 'dark'].flatMap((element, elemIndex) =>
     Array.from({ length: 20 }, (_, i) => ({
       id: `${element}_rare_${i + 1}`,
-      name: `Enhanced ${element.charAt(0).toUpperCase() + element.slice(1)} Cube ${i + 1}`,
+      name: `${getUniqueName('enhanced', i + elemIndex * 20)} Enhanced ${element.charAt(0).toUpperCase() + element.slice(1)} Cube`,
       description: `Advanced ${element} cube with amplified energy.`,
       rarity: 'rare' as CubeRarity,
       element: element as any,
@@ -103,7 +130,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Crystal Series
   ...Array.from({ length: 40 }, (_, i) => ({
     id: `crystal_rare_${i + 1}`,
-    name: `Crystal Cube ${i + 1}`,
+    name: `${getUniqueName('crystal', i)} Crystal Cube`,
     description: `Crystalline structure enhances energy flow and efficiency.`,
     rarity: 'rare' as CubeRarity,
     effect: { 
@@ -119,7 +146,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['copper', 'bronze', 'silver', 'gold', 'platinum'].flatMap((metal, metalIndex) =>
     Array.from({ length: 15 }, (_, i) => ({
       id: `${metal}_rare_${i + 1}`,
-      name: `${metal.charAt(0).toUpperCase() + metal.slice(1)} Alloy Cube ${i + 1}`,
+      name: `${getUniqueName('metallic', i + metalIndex * 15)} ${metal.charAt(0).toUpperCase() + metal.slice(1)} Alloy Cube`,
       description: `Forged from pure ${metal} with magical enhancements.`,
       rarity: 'rare' as CubeRarity,
       effect: { 
@@ -136,7 +163,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Void Series
   ...Array.from({ length: 30 }, (_, i) => ({
     id: `void_epic_${i + 1}`,
-    name: `Void Cube ${i + 1}`,
+    name: `${getUniqueName('void', i)} Void Cube`,
     description: `Infused with void energy, bends reality around it.`,
     rarity: 'epic' as CubeRarity,
     element: 'void' as any,
@@ -153,7 +180,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Chaos Series
   ...Array.from({ length: 25 }, (_, i) => ({
     id: `chaos_epic_${i + 1}`,
-    name: `Chaos Cube ${i + 1}`,
+    name: `${getUniqueName('chaos', i)} Chaos Cube`,
     description: `Unpredictable chaos energy provides random powerful effects.`,
     rarity: 'epic' as CubeRarity,
     element: 'chaos' as any,
@@ -171,7 +198,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'onyx', 'opal'].flatMap((gem, gemIndex) =>
     Array.from({ length: 12 }, (_, i) => ({
       id: `${gem}_epic_${i + 1}`,
-      name: `${gem.charAt(0).toUpperCase() + gem.slice(1)} Cube ${i + 1}`,
+      name: `${getUniqueName('gemstone', i + gemIndex * 12)} ${gem.charAt(0).toUpperCase() + gem.slice(1)} Cube`,
       description: `Carved from pure ${gem}, radiates magical energy.`,
       rarity: 'epic' as CubeRarity,
       effect: { 
@@ -188,7 +215,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Ancient Series
   ...Array.from({ length: 25 }, (_, i) => ({
     id: `ancient_legendary_${i + 1}`,
-    name: `Ancient Relic Cube ${i + 1}`,
+    name: `${getUniqueName('ancient', i)} Ancient Relic Cube`,
     description: `Artifact from lost civilizations, contains forgotten magic.`,
     rarity: 'legendary' as CubeRarity,
     effect: { 
@@ -205,7 +232,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['sun', 'moon', 'star', 'comet', 'nebula', 'galaxy'].flatMap((celestial, celIndex) =>
     Array.from({ length: 10 }, (_, i) => ({
       id: `${celestial}_legendary_${i + 1}`,
-      name: `${celestial.charAt(0).toUpperCase() + celestial.slice(1)} Cube ${i + 1}`,
+      name: `${getUniqueName('celestial', i + celIndex * 10)} ${celestial.charAt(0).toUpperCase() + celestial.slice(1)} Cube`,
       description: `Forged in the heart of a ${celestial}, burns with cosmic power.`,
       rarity: 'legendary' as CubeRarity,
       effect: { 
@@ -222,7 +249,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['fire', 'ice', 'lightning', 'shadow', 'light'].flatMap((dragon, dragIndex) =>
     Array.from({ length: 8 }, (_, i) => ({
       id: `${dragon}_dragon_${i + 1}`,
-      name: `${dragon.charAt(0).toUpperCase() + dragon.slice(1)} Dragon Cube ${i + 1}`,
+      name: `${getUniqueName('dragon', i + dragIndex * 8)} ${dragon.charAt(0).toUpperCase() + dragon.slice(1)} Dragon Cube`,
       description: `Contains the essence of an ancient ${dragon} dragon.`,
       rarity: 'legendary' as CubeRarity,
       effect: { 
@@ -240,7 +267,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Prism Series
   ...Array.from({ length: 20 }, (_, i) => ({
     id: `prism_prismatic_${i + 1}`,
-    name: `Prismatic Cube ${i + 1}`,
+    name: `${getUniqueName('prism', i)} Prismatic Cube`,
     description: `Refracts all forms of energy into pure power.`,
     rarity: 'prismatic' as CubeRarity,
     effect: { 
@@ -256,7 +283,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Rainbow Series
   ...Array.from({ length: 15 }, (_, i) => ({
     id: `rainbow_prismatic_${i + 1}`,
-    name: `Rainbow Cube ${i + 1}`,
+    name: `${getUniqueName('prism', i + 20)} Rainbow Cube`,
     description: `Contains all spectrum energies in perfect harmony.`,
     rarity: 'prismatic' as CubeRarity,
     effect: { 
@@ -274,7 +301,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   ...['zeus', 'odin', 'ra', 'shiva', 'amaterasu'].flatMap((god, godIndex) =>
     Array.from({ length: 5 }, (_, i) => ({
       id: `${god}_mythic_${i + 1}`,
-      name: `${god.charAt(0).toUpperCase() + god.slice(1)}'s Cube ${i + 1}`,
+      name: `${getUniqueName('divine', i + godIndex * 5)} ${god.charAt(0).toUpperCase() + god.slice(1)}'s Cube`,
       description: `Blessed by the deity ${god}, contains divine power.`,
       rarity: 'mythic' as CubeRarity,
       effect: { 
@@ -292,7 +319,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Universe Series
   ...Array.from({ length: 15 }, (_, i) => ({
     id: `cosmic_${i + 1}`,
-    name: `Cosmic Cube ${i + 1}`,
+    name: `${getUniqueName('cosmic', i)} Cosmic Cube`,
     description: `Contains the power of entire star systems.`,
     rarity: 'cosmic' as CubeRarity,
     effect: { 
@@ -309,7 +336,7 @@ export const CUBE_LIBRARY: CubeTemplate[] = [
   // Transcendent Series
   ...Array.from({ length: 10 }, (_, i) => ({
     id: `eternal_${i + 1}`,
-    name: `Eternal Cube ${i + 1}`,
+    name: `${getUniqueName('eternal', i)} Eternal Cube`,
     description: `Exists beyond time and space, infinite power.`,
     rarity: 'eternal' as CubeRarity,
     effect: { 
