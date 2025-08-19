@@ -25,7 +25,7 @@ import { CrateShop } from './CrateShop';
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop' | 'engagementHub';
 
 export const CleanPerceptionShift = () => {
-  const { initGame, isPlaying, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
+  const { initGame, isPlaying, isPaused, isGameOver, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
   const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
   
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
@@ -169,8 +169,12 @@ export const CleanPerceptionShift = () => {
     if (currentScreen === 'game') {
       console.log('🎯 Game screen detected - calling initGame()');
       initGame();
+      // Add a small delay to ensure state is updated
+      setTimeout(() => {
+        console.log('🔄 Checking game state after init:', { isPlaying, isPaused, isGameOver });
+      }, 100);
     }
-  }, [initGame, currentScreen]);
+  }, [initGame, currentScreen, isPlaying, isPaused, isGameOver]);
 
   const handleUserComplete = (userEmail: string) => {
     console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);

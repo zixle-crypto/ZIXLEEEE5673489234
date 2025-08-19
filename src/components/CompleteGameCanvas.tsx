@@ -105,7 +105,6 @@ export const CompleteGameCanvas = () => {
 
     // Game update logic
     const updateGame = () => {
-      console.log('🎮 Game update check - isPlaying:', isPlaying, 'isPaused:', isPaused, 'isGameOver:', isGameOver);
       if (!isPlaying || isPaused || isGameOver) return;
 
       const player = playerRef.current;
