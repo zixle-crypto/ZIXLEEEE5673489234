@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_key: string
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          rarity: string
+          reward_cubes: Json | null
+          reward_shards: number
+          target_value: number | null
+          title: string
+        }
+        Insert: {
+          achievement_key: string
+          category: string
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          rarity?: string
+          reward_cubes?: Json | null
+          reward_shards?: number
+          target_value?: number | null
+          title: string
+        }
+        Update: {
+          achievement_key?: string
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          rarity?: string
+          reward_cubes?: Json | null
+          reward_shards?: number
+          target_value?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      bonus_events: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          end_time: string
+          event_type: string
+          id: string
+          multiplier: number
+          start_time: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description: string
+          end_time: string
+          event_type: string
+          id?: string
+          multiplier?: number
+          start_time: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          end_time?: string
+          event_type?: string
+          id?: string
+          multiplier?: number
+          start_time?: string
+          title?: string
+        }
+        Relationships: []
+      }
       crate_purchases: {
         Row: {
           amount: number
@@ -56,6 +134,45 @@ export type Database = {
           stripe_session_id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      daily_challenges: {
+        Row: {
+          active_date: string
+          challenge_type: string
+          created_at: string
+          description: string
+          difficulty: string
+          id: string
+          reward_cubes: Json | null
+          reward_shards: number
+          target_value: number
+          title: string
+        }
+        Insert: {
+          active_date?: string
+          challenge_type: string
+          created_at?: string
+          description: string
+          difficulty?: string
+          id?: string
+          reward_cubes?: Json | null
+          reward_shards: number
+          target_value: number
+          title: string
+        }
+        Update: {
+          active_date?: string
+          challenge_type?: string
+          created_at?: string
+          description?: string
+          difficulty?: string
+          id?: string
+          reward_cubes?: Json | null
+          reward_shards?: number
+          target_value?: number
+          title?: string
         }
         Relationships: []
       }
@@ -209,6 +326,48 @@ export type Database = {
         }
         Relationships: []
       }
+      power_ups: {
+        Row: {
+          cost_shards: number
+          created_at: string
+          description: string
+          duration_seconds: number
+          effect_type: string
+          effect_value: number
+          icon: string
+          id: string
+          name: string
+          power_up_key: string
+          rarity: string
+        }
+        Insert: {
+          cost_shards?: number
+          created_at?: string
+          description: string
+          duration_seconds: number
+          effect_type: string
+          effect_value: number
+          icon: string
+          id?: string
+          name: string
+          power_up_key: string
+          rarity?: string
+        }
+        Update: {
+          cost_shards?: number
+          created_at?: string
+          description?: string
+          duration_seconds?: number
+          effect_type?: string
+          effect_value?: number
+          icon?: string
+          id?: string
+          name?: string
+          power_up_key?: string
+          rarity?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -277,6 +436,82 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string | null
+          created_at: string
+          id: string
+          progress: number
+          unlocked: boolean
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id?: string | null
+          created_at?: string
+          id?: string
+          progress?: number
+          unlocked?: boolean
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string | null
+          created_at?: string
+          id?: string
+          progress?: number
+          unlocked?: boolean
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string | null
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          current_progress: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "daily_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_data: {
         Row: {
@@ -375,6 +610,80 @@ export type Database = {
           id?: string
           purchased_at?: string
           quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_power_ups: {
+        Row: {
+          created_at: string
+          id: string
+          power_up_id: string | null
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          power_up_id?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          power_up_id?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_power_ups_power_up_id_fkey"
+            columns: ["power_up_id"]
+            isOneToOne: false
+            referencedRelation: "power_ups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_streaks: {
+        Row: {
+          created_at: string
+          id: string
+          last_login: string | null
+          last_play: string | null
+          login_streak: number
+          max_login_streak: number
+          max_play_streak: number
+          play_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_login?: string | null
+          last_play?: string | null
+          login_streak?: number
+          max_login_streak?: number
+          max_play_streak?: number
+          play_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_login?: string | null
+          last_play?: string | null
+          login_streak?: number
+          max_login_streak?: number
+          max_play_streak?: number
+          play_streak?: number
           updated_at?: string
           user_id?: string
         }
