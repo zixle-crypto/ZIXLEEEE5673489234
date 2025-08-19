@@ -38,19 +38,37 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
-    const currentUrl = window.location.origin;
-    console.log('🌐 Current URL:', currentUrl);
-    console.log('🚀 Starting Google OAuth with redirect...');
+    console.log('🚀 Starting Google OAuth with popup...');
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${currentUrl}/`
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true
         }
       });
 
       if (error) throw error;
+      
+      if (data.url) {
+        // Open in popup to avoid iframe restrictions
+        const popup = window.open(data.url, 'oauth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+        
+        // Listen for the popup to close or auth completion
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            setIsLoading(false);
+            // Check auth state after popup closes
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              if (user) {
+                onComplete(user.email || 'user');
+              }
+            });
+          }
+        }, 1000);
+      }
       
     } catch (error: any) {
       console.error('❌ Google sign-in failed:', error);
@@ -65,19 +83,37 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGitHub = async () => {
     setIsLoading(true);
-    const currentUrl = window.location.origin;
-    console.log('🌐 Current URL:', currentUrl);
-    console.log('🚀 Starting GitHub OAuth with redirect...');
+    console.log('🚀 Starting GitHub OAuth with popup...');
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${currentUrl}/`
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true
         }
       });
 
       if (error) throw error;
+      
+      if (data.url) {
+        // Open in popup to avoid iframe restrictions
+        const popup = window.open(data.url, 'oauth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+        
+        // Listen for the popup to close or auth completion
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            setIsLoading(false);
+            // Check auth state after popup closes
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              if (user) {
+                onComplete(user.email || 'user');
+              }
+            });
+          }
+        }, 1000);
+      }
       
     } catch (error: any) {
       console.error('❌ GitHub sign-in failed:', error);
