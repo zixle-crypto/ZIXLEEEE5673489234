@@ -163,7 +163,7 @@ export const useGameStore = create<GameStore>()(
           },
         }));
         
-        console.log('✅ Game initialized');
+        console.log('✅ Game initialized - Player at spawn:', newPlayer.x, newPlayer.y);
       },
 
       updatePlayer: (deltaTime: number) => {

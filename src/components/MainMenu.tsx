@@ -76,7 +76,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {/* Menu Buttons */}
       <div className="flex flex-col gap-4 w-full max-w-md">
         <Button
-          onClick={onPlay}
+          onClick={() => {
+            // Optimized button - no processing during click
+            requestAnimationFrame(() => onPlay());
+          }}
           className="h-16 bg-perception hover:bg-perception/90 text-white font-mono text-xl flex items-center gap-3 transition-all duration-200 hover:scale-105"
         >
           <Play className="w-6 h-6" />

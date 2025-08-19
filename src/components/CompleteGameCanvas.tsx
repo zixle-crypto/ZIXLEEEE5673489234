@@ -11,9 +11,10 @@ export const CompleteGameCanvas = () => {
   const animationRef = useRef<number>();
   const keysRef = useRef<Set<string>>(new Set());
   
-  const playerRef = useRef({ x: 50, y: 480, velX: 0, velY: 0, onGround: false, width: 32, height: 32 });
+  const initialRoom = createRoom(1);
+  const playerRef = useRef({ x: initialRoom.spawn.x, y: initialRoom.spawn.y, velX: 0, velY: 0, onGround: true, width: 32, height: 32 });
   const cursorRef = useRef({ x: 400, y: 300 });
-  const currentRoomRef = useRef<Room>(createRoom(1));
+  const currentRoomRef = useRef<Room>(initialRoom);
   const roomNumberRef = useRef(1);
 
   const {
@@ -77,10 +78,17 @@ export const CompleteGameCanvas = () => {
     canvas.style.height = '100%';
     canvas.style.display = 'block';
 
-    // Sync with store state efficiently
-    playerRef.current = { ...player };
-    currentRoomRef.current = { ...currentRoom };
-    roomNumberRef.current = roomsCleared + 1;
+    // Force sync on mount and when playing starts
+    if (!isPlaying) {
+      // Game not started yet - keep initial positions
+      console.log('🎮 Game not playing - keeping initial spawn position');
+    } else {
+      // Game is playing - sync with store
+      playerRef.current = { ...player };
+      currentRoomRef.current = { ...currentRoom };
+      roomNumberRef.current = roomsCleared + 1;
+      console.log('🔄 Synced player position:', player.x, player.y);
+    }
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -392,14 +400,16 @@ export const CompleteGameCanvas = () => {
     };
   }, [handleKeyDown, handleKeyUp, handleMouseMove]); 
 
-  // Separate useEffect to handle respawn/restart events and room transitions
+  // Separate useEffect to handle respawn/restart events and room transitions  
   useEffect(() => {
-    // Sync refs when store state changes (restart/respawn/room change)
-    playerRef.current = { ...player };
-    currentRoomRef.current = { ...currentRoom };
-    roomNumberRef.current = roomsCleared + 1;
-    console.log(`🔄 Synced with store - Room ${roomsCleared + 1}, Player at (${player.x}, ${player.y})`);
-  }, [currentRoom.id, roomsCleared]); // Only sync on room changes, not player position
+    // Force sync when room changes or player respawns
+    if (currentRoom.id !== currentRoomRef.current.id || !isPlaying) {
+      playerRef.current = { ...player };
+      currentRoomRef.current = { ...currentRoom };
+      roomNumberRef.current = roomsCleared + 1;
+      console.log(`🔄 Room ${roomsCleared + 1} - Player spawned at (${player.x}, ${player.y})`);
+    }
+  }, [currentRoom.id, roomsCleared, isPlaying, player.x, player.y]);
 
     return (
     <div className="w-full h-full flex items-center justify-center relative">

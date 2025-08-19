@@ -168,13 +168,13 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     if (currentScreen === 'game') {
       console.log('🎯 Game screen detected - calling initGame()');
-      initGame();
-      // Add a small delay to ensure state is updated
+      // Use a small delay to ensure proper initialization
       setTimeout(() => {
-        console.log('🔄 Checking game state after init:', { isPlaying, isPaused, isGameOver });
-      }, 100);
+        initGame();
+        console.log('✅ initGame() called');
+      }, 50);
     }
-  }, [currentScreen]); // Only depend on currentScreen to prevent render loop
+  }, [currentScreen, initGame]);
 
   const handleUserComplete = (userEmail: string) => {
     console.log('handleUserComplete called with:', userEmail, 'current user:', user?.email);
