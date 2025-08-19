@@ -302,7 +302,10 @@ export const CleanPerceptionShift = () => {
       <EngagementHub
         onBack={() => setCurrentScreen('menu')}
         totalShards={gameStoreShards || (gameData?.total_shards || 0)}
-        onPurchase={handleShopPurchase}
+        onPurchase={(cost: number) => {
+          // EngagementHub handles power-up purchases internally, 
+          // this callback is just for notifications
+        }}
       />
     );
   }
