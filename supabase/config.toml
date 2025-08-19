@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.claim-gift]
 verify_jwt = true
+
+[functions.create-crate-payment]
+verify_jwt = true
+
+[functions.process-crate-purchase]
+verify_jwt = true
