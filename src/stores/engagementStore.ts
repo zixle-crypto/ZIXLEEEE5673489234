@@ -272,20 +272,31 @@ export const useEngagementStore = create<EngagementState>()(
           const achievement = get().achievements.find(a => a.achievement_key === achievementKey);
           if (!achievement) return;
 
+          const currentUserAchievement = get().userAchievements.find(ua => ua.achievement_id === achievement.id);
+          const wasUnlocked = currentUserAchievement?.unlocked || false;
+          const isNowUnlocked = progress >= (achievement.target_value || 1);
+
           const { data, error } = await supabase
             .from('user_achievements')
             .upsert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               achievement_id: achievement.id,
               progress: progress,
-              unlocked: progress >= (achievement.target_value || 1),
-              unlocked_at: progress >= (achievement.target_value || 1) ? new Date().toISOString() : null
+              unlocked: isNowUnlocked,
+              unlocked_at: isNowUnlocked && !wasUnlocked ? new Date().toISOString() : currentUserAchievement?.unlocked_at
             }, {
               onConflict: 'user_id,achievement_id'
             })
             .select();
 
           if (error) throw error;
+          
+          // Award shards if newly unlocked
+          if (isNowUnlocked && !wasUnlocked && achievement.reward_shards > 0) {
+            const { useUserDataStore } = await import('@/stores/userDataStore');
+            await useUserDataStore.getState().updateShards(achievement.reward_shards);
+            console.log(`🏆 Achievement unlocked: ${achievement.title} - Awarded ${achievement.reward_shards} shards!`);
+          }
           
           // Reload user achievements
           get().loadUserAchievements();
@@ -299,20 +310,31 @@ export const useEngagementStore = create<EngagementState>()(
           const challenge = get().dailyChallenges.find(c => c.id === challengeId);
           if (!challenge) return;
 
+          const currentProgress = get().userChallengeProgress.find(cp => cp.challenge_id === challengeId);
+          const wasCompleted = currentProgress?.completed || false;
+          const isNowCompleted = progress >= challenge.target_value;
+
           const { data, error } = await supabase
             .from('user_challenge_progress')
             .upsert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               challenge_id: challengeId,
               current_progress: progress,
-              completed: progress >= challenge.target_value,
-              completed_at: progress >= challenge.target_value ? new Date().toISOString() : null
+              completed: isNowCompleted,
+              completed_at: isNowCompleted && !wasCompleted ? new Date().toISOString() : currentProgress?.completed_at
             }, {
               onConflict: 'user_id,challenge_id'
             })
             .select();
 
           if (error) throw error;
+          
+          // Award shards if newly completed
+          if (isNowCompleted && !wasCompleted && challenge.reward_shards > 0) {
+            const { useUserDataStore } = await import('@/stores/userDataStore');
+            await useUserDataStore.getState().updateShards(challenge.reward_shards);
+            console.log(`🎯 Challenge completed: ${challenge.title} - Awarded ${challenge.reward_shards} shards!`);
+          }
           
           // Reload challenge progress
           get().loadUserChallengeProgress();
@@ -326,19 +348,36 @@ export const useEngagementStore = create<EngagementState>()(
           const powerUp = get().powerUps.find(p => p.id === powerUpId);
           if (!powerUp) return false;
 
+          // Check if user has enough shards and deduct them
+          const { useUserDataStore } = await import('@/stores/userDataStore');
+          const { gameData } = useUserDataStore.getState();
+          
+          if (!gameData || gameData.total_shards < powerUp.cost_shards) {
+            console.error('❌ Not enough shards for power-up purchase');
+            return false;
+          }
+
+          // Deduct shards first
+          await useUserDataStore.getState().updateShards(-powerUp.cost_shards);
+
+          // Find existing user power-up or create new one
+          const existingUserPowerUp = get().userPowerUps.find(up => up.power_up_id === powerUpId);
+          const newQuantity = existingUserPowerUp ? existingUserPowerUp.quantity + 1 : 1;
+
           const { data, error } = await supabase
             .from('user_power_ups')
             .upsert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               power_up_id: powerUpId,
-              quantity: 1
+              quantity: newQuantity
             }, {
-              onConflict: 'user_id,power_up_id',
-              ignoreDuplicates: false
+              onConflict: 'user_id,power_up_id'
             })
             .select();
 
           if (error) throw error;
+          
+          console.log(`💰 Power-up purchased: ${powerUp.name} - Cost: ${powerUp.cost_shards} shards`);
           
           // Reload user power-ups
           get().loadUserPowerUps();

@@ -349,6 +349,35 @@ export const useGameStore = create<GameStore>()(
         try {
           console.log('🏁 Calling complete-room function...');
           
+          // Update engagement progress
+          try {
+            const { useEngagementStore } = await import('@/stores/engagementStore');
+            const engagementStore = useEngagementStore.getState();
+            
+            // Update achievement progress
+            await engagementStore.updateAchievementProgress('rooms_completed', state.roomsCleared + 1);
+            await engagementStore.updateAchievementProgress('shards_collected', state.totalShards + shardsCollected);
+            
+            // Update daily challenges progress
+            const challenges = engagementStore.dailyChallenges;
+            for (const challenge of challenges) {
+              if (challenge.challenge_type === 'complete_rooms') {
+                await engagementStore.updateChallengeProgress(challenge.id, state.roomsCleared + 1);
+              } else if (challenge.challenge_type === 'collect_shards') {
+                await engagementStore.updateChallengeProgress(challenge.id, state.totalShards + shardsCollected);
+              } else if (challenge.challenge_type === 'fast_completion' && completionTime < 30) {
+                const currentProgress = engagementStore.userChallengeProgress.find(cp => cp.challenge_id === challenge.id);
+                await engagementStore.updateChallengeProgress(challenge.id, (currentProgress?.current_progress || 0) + 1);
+              }
+            }
+            
+            // Update play streak
+            await engagementStore.updateStreak('play');
+            console.log('✅ Engagement progress updated');
+          } catch (engagementError) {
+            console.error('❌ Error updating engagement progress:', engagementError);
+          }
+          
           // Call the complete-room edge function to update leaderboard
           const { data: roomCompletionData, error } = await supabase.functions.invoke('complete-room', {
             body: {

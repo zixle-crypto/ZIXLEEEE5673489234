@@ -97,10 +97,15 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
 
     const success = await purchasePowerUp(powerUp.id);
     if (success) {
-      onPurchase(powerUp.cost_shards);
       toast({
         title: "Power-Up Purchased!",
-        description: `${powerUp.name} added to your inventory`,
+        description: `${powerUp.name} added to your inventory for ${powerUp.cost_shards} shards`,
+      });
+    } else {
+      toast({
+        title: "Purchase Failed",
+        description: "Could not complete the purchase. Please try again.",
+        variant: "destructive"
       });
     }
   };
