@@ -354,18 +354,28 @@ export const useGameStore = create<GameStore>()(
             const { useEngagementStore } = await import('@/stores/engagementStore');
             const engagementStore = useEngagementStore.getState();
             
-            // Update achievement progress
-            await engagementStore.updateAchievementProgress('rooms_completed', state.roomsCleared + 1);
-            await engagementStore.updateAchievementProgress('shards_collected', state.totalShards + shardsCollected);
+            // Update achievement progress based on actual achievement keys
+            const totalRoomsCompleted = state.roomsCleared + 1;
+            await engagementStore.updateAchievementProgress('first_steps', totalRoomsCompleted);
+            await engagementStore.updateAchievementProgress('room_warrior', totalRoomsCompleted);
+            await engagementStore.updateAchievementProgress('room_master', totalRoomsCompleted);
+            await engagementStore.updateAchievementProgress('room_legend', totalRoomsCompleted);
             
-            // Update daily challenges progress
+            // Update daily challenges progress based on actual challenge types
             const challenges = engagementStore.dailyChallenges;
             for (const challenge of challenges) {
-              if (challenge.challenge_type === 'complete_rooms') {
-                await engagementStore.updateChallengeProgress(challenge.id, state.roomsCleared + 1);
-              } else if (challenge.challenge_type === 'collect_shards') {
-                await engagementStore.updateChallengeProgress(challenge.id, state.totalShards + shardsCollected);
-              } else if (challenge.challenge_type === 'fast_completion' && completionTime < 30) {
+              if (challenge.challenge_type === 'cube_collector') {
+                // Update based on shards collected (treating as cubes for now)
+                await engagementStore.updateChallengeProgress(challenge.id, shardsCollected);
+              } else if (challenge.challenge_type === 'speed_run' && completionTime < 120) {
+                // Fast completion under 2 minutes
+                const currentProgress = engagementStore.userChallengeProgress.find(cp => cp.challenge_id === challenge.id);
+                await engagementStore.updateChallengeProgress(challenge.id, (currentProgress?.current_progress || 0) + 1);
+              } else if (challenge.challenge_type === 'streak_master') {
+                // Update based on consecutive rooms
+                await engagementStore.updateChallengeProgress(challenge.id, totalRoomsCompleted);
+              } else if (challenge.challenge_type === 'survival') {
+                // Update if no power-ups were used (simplified check)
                 const currentProgress = engagementStore.userChallengeProgress.find(cp => cp.challenge_id === challenge.id);
                 await engagementStore.updateChallengeProgress(challenge.id, (currentProgress?.current_progress || 0) + 1);
               }

@@ -358,12 +358,13 @@ export const useEngagementStore = create<EngagementState>()(
             return false;
           }
 
-          // Check if user has enough shards and deduct them
+          // Check if user has enough shards
           const { useUserDataStore } = await import('@/stores/userDataStore');
-          const { gameData } = useUserDataStore.getState();
+          const userDataStore = useUserDataStore.getState();
+          const { gameData } = userDataStore;
           
           if (!gameData || gameData.total_shards < powerUp.cost_shards) {
-            console.error('❌ Not enough shards for power-up purchase');
+            console.error('❌ Not enough shards for power-up purchase. Need:', powerUp.cost_shards, 'Have:', gameData?.total_shards || 0);
             return false;
           }
 
@@ -388,7 +389,7 @@ export const useEngagementStore = create<EngagementState>()(
           }
 
           // Only deduct shards after successful database operation
-          await useUserDataStore.getState().updateShards(-powerUp.cost_shards);
+          await userDataStore.updateShards(-powerUp.cost_shards);
           
           console.log(`💰 Power-up purchased: ${powerUp.name} - Cost: ${powerUp.cost_shards} shards`);
           
