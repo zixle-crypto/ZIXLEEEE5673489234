@@ -84,14 +84,14 @@ const GAME_CONFIG = {
   PLAYER_SIZE: 24,
 };
 
-const createInitialPlayer = (): Player => ({
-  x: 100,
-  y: 400,
+const createInitialPlayer = (spawnX: number = 50, spawnY: number = 480): Player => ({
+  x: spawnX,
+  y: spawnY,
   velX: 0,
   velY: 0,
   width: GAME_CONFIG.PLAYER_SIZE,
   height: GAME_CONFIG.PLAYER_SIZE,
-  onGround: false,
+  onGround: true,
   alive: true,
 });
 
@@ -134,23 +134,19 @@ export const useGameStore = create<GameStore>()(
       // Actions
       initGame: () => {
         console.log('🎮 Initializing game state...');
-        const newPlayer = createInitialPlayer();
         const newRoom = createInitialRoom(1);
+        const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
         
-        // Position player at spawn point
-        newPlayer.x = newRoom.spawn.x;
-        newPlayer.y = newRoom.spawn.y;
-        
-        console.log('🎯 Player created at:', newPlayer.x, newPlayer.y);
+        console.log('🎯 Player spawned at:', newPlayer.x, newPlayer.y);
         console.log('🔸 Room created with', newRoom.shards.length, 'shards');
         
         set((prevState) => ({
           player: newPlayer,
           currentRoom: newRoom,
-          cursor: { x: 400, y: 300 }, // Center of canvas
+          cursor: { x: 400, y: 300 },
           roomsCleared: 0,
           score: 0,
-          totalShards: prevState.totalShards || 0, // Preserve existing shards
+          totalShards: prevState.totalShards || 0,
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
@@ -167,7 +163,7 @@ export const useGameStore = create<GameStore>()(
           },
         }));
         
-        console.log('✅ Game initialized - isPlaying: true');
+        console.log('✅ Game initialized');
       },
 
       updatePlayer: (deltaTime: number) => {
@@ -290,13 +286,9 @@ export const useGameStore = create<GameStore>()(
       restartGame: () => {
         console.log('🔄 Restart game called');
         
-        // Reset game state immediately
-        const newPlayer = createInitialPlayer();
+        // Reset game state immediately  
         const newRoom = createInitialRoom(1);
-        
-        // Position player at spawn point
-        newPlayer.x = newRoom.spawn.x;
-        newPlayer.y = newRoom.spawn.y;
+        const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
         
         set((prevState) => ({
           player: newPlayer,
@@ -327,11 +319,7 @@ export const useGameStore = create<GameStore>()(
       respawnInRoom: () => {
         console.log('🔄 Respawning in current room');
         const state = get();
-        const newPlayer = createInitialPlayer();
-        
-        // Position player at current room's spawn point
-        newPlayer.x = state.currentRoom.spawn.x;
-        newPlayer.y = state.currentRoom.spawn.y;
+        const newPlayer = createInitialPlayer(state.currentRoom.spawn.x, state.currentRoom.spawn.y);
         
         set({
           player: newPlayer,
@@ -340,7 +328,7 @@ export const useGameStore = create<GameStore>()(
           isGameOver: false,
         });
         
-        console.log('✅ Player respawned in room');
+        console.log('✅ Player respawned at spawn point');
       },
 
       nextRoom: async () => {
@@ -418,12 +406,8 @@ export const useGameStore = create<GameStore>()(
         }
         
         // Create next room and advance game state
-        const newRoom = createInitialRoom(nextRoomNumber); // Support unlimited rooms
-        const newPlayer = createInitialPlayer();
-        
-        // Position player at spawn point
-        newPlayer.x = newRoom.spawn.x;
-        newPlayer.y = newRoom.spawn.y;
+        const newRoom = createInitialRoom(nextRoomNumber);
+        const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
         
         set({
           player: newPlayer,

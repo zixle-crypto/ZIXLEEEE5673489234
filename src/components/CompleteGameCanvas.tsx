@@ -70,26 +70,14 @@ export const CompleteGameCanvas = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set up responsive canvas size
-    const resizeCanvas = () => {
-      const container = canvas.parentElement;
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        // Fixed canvas size for better performance
-        canvas.width = 800;
-        canvas.height = 600;
-        
-        // Force canvas to be visible with explicit styling
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.display = 'block';
-      }
-    };
+    // Optimized canvas setup - no resizing
+    canvas.width = 800;
+    canvas.height = 600;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Initial sync with store state
+    // Sync with store state efficiently
     playerRef.current = { ...player };
     currentRoomRef.current = { ...currentRoom };
     roomNumberRef.current = roomsCleared + 1;
@@ -384,26 +372,19 @@ export const CompleteGameCanvas = () => {
       }
     };
 
-    // Optimized game loop with fixed timestep
-    let lastTime = 0;
-    const targetFPS = 60;
-    const frameInterval = 1000 / targetFPS;
-    
-    const gameLoop = (currentTime: number) => {
-      if (currentTime - lastTime >= frameInterval) {
-        updateGame();
-        render();
-        lastTime = currentTime;
-      }
+    // Simple game loop - minimal overhead
+    const gameLoop = () => {
+      updateGame();
+      render();
       animationRef.current = requestAnimationFrame(gameLoop);
     };
 
-    gameLoop(0);
+    // Start immediately without delay
+    animationRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('mousemove', handleMouseMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
