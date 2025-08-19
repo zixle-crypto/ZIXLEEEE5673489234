@@ -52,9 +52,13 @@ serve(async (req) => {
   }
 
   try {
+    console.log("=== CRATE PAYMENT FUNCTION STARTED ===");
+    
     const { crateType } = await req.json();
+    console.log("Requested crate type:", crateType);
     
     if (!crateType || !CRATE_PRICING[crateType as keyof typeof CRATE_PRICING]) {
+      console.error("Invalid crate type provided:", crateType);
       throw new Error("Invalid crate type");
     }
 
@@ -64,14 +68,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization")!;
+    console.log("Supabase client created");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      throw new Error("Authorization required");
+    }
+    
     const token = authHeader.replace("Bearer ", "");
+    console.log("Extracting user from token...");
+    
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     
     if (!user?.email) {
+      console.error("User not authenticated or no email");
       throw new Error("User not authenticated");
     }
+    
+    console.log("User authenticated:", user.email);
 
     // Initialize Stripe with proper error handling
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
