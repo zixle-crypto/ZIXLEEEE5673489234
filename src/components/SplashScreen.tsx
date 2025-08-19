@@ -38,13 +38,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
+    const currentUrl = window.location.origin;
+    console.log('🌐 Current URL:', currentUrl);
     console.log('🚀 Starting Google OAuth with redirect...');
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${currentUrl}/`
         }
       });
 
@@ -54,7 +56,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       console.error('❌ Google sign-in failed:', error);
       toast({
         title: "Sign in failed",
-        description: "Please try again or use guest mode.",
+        description: error.message || "Please check OAuth configuration.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -63,13 +65,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
 
   const signInWithGitHub = async () => {
     setIsLoading(true);
+    const currentUrl = window.location.origin;
+    console.log('🌐 Current URL:', currentUrl);
     console.log('🚀 Starting GitHub OAuth with redirect...');
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${currentUrl}/`
         }
       });
 
@@ -79,7 +83,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
       console.error('❌ GitHub sign-in failed:', error);
       toast({
         title: "Sign in failed", 
-        description: "Please try again or use guest mode.",
+        description: error.message || "Please check OAuth configuration.",
         variant: "destructive"
       });
       setIsLoading(false);
