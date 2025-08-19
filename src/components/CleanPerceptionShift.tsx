@@ -168,11 +168,11 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     if (currentScreen === 'game') {
       console.log('🎯 Game screen detected - calling initGame()');
-      // Use a small delay to ensure proper initialization
-      setTimeout(() => {
+      // Ensure clean initialization without delay to prevent freezing
+      requestAnimationFrame(() => {
         initGame();
         console.log('✅ initGame() called');
-      }, 50);
+      });
     }
   }, [currentScreen, initGame]);
 
@@ -195,11 +195,19 @@ export const CleanPerceptionShift = () => {
       console.log('💰 Purchasing cube:', itemId, 'for', cost, 'shards');
       
       // Get the functions from user data store
-      const { updateShards, addCubeToInventory } = useUserDataStore.getState();
+      const { updateShards, addCubeToInventory, gameData } = useUserDataStore.getState();
+      
+      // Check if user has enough shards
+      if (!gameData || gameData.total_shards < cost) {
+        console.error('❌ Not enough shards for purchase');
+        return;
+      }
       
       // Deduct shards and add cube to inventory
       await updateShards(-cost);
       await addCubeToInventory(itemId);
+      
+      console.log('✅ Purchase completed - shards deducted:', cost);
       
       // Also update the game store shards to sync the UI
       const { totalShards: currentGameShards } = useGameStore.getState();

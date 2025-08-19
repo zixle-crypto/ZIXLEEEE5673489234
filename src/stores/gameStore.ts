@@ -134,19 +134,22 @@ export const useGameStore = create<GameStore>()(
       // Actions
       initGame: () => {
         console.log('🎮 Initializing game state...');
+        
+        // Clear any existing state first to prevent conflicts
         const newRoom = createInitialRoom(1);
         const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
         
         console.log('🎯 Player spawned at:', newPlayer.x, newPlayer.y);
         console.log('🔸 Room created with', newRoom.shards.length, 'shards');
         
+        // Clean state reset to prevent freezing issues
         set((prevState) => ({
           player: newPlayer,
           currentRoom: newRoom,
           cursor: { x: 400, y: 300 },
           roomsCleared: 0,
           score: 0,
-          totalShards: prevState.totalShards || 0,
+          totalShards: prevState.totalShards || 0, // Preserve shards across game resets
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
