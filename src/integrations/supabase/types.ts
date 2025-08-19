@@ -797,6 +797,10 @@ export type Database = {
           username: string
         }[]
       }
+      increment_user_shards: {
+        Args: { shard_amount: number; user_id_param: string }
+        Returns: undefined
+      }
       update_leaderboard: {
         Args: {
           p_current_score: number
