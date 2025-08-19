@@ -137,8 +137,8 @@ export const CompleteGameCanvas = () => {
       room.platforms.forEach(platform => {
         if (player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
-            player.y + player.height >= platform.y &&
-            player.y + player.height <= platform.y + platform.height + 10 &&
+            player.y + player.height > platform.y &&
+            player.y + player.height <= platform.y + platform.height + 15 &&
             player.velY >= 0) {
           player.y = platform.y - player.height;
           player.velY = 0;
@@ -158,10 +158,22 @@ export const CompleteGameCanvas = () => {
           const isSafe = tile.safeWhenAttended ? tile.isAttended : !tile.isAttended;
           
           if (tile.type === 'bridge' && isSafe) {
-            // Bridge acts like platform when safe
-            if (player.y + player.height >= tile.y && 
-                player.y + player.height <= tile.y + tile.height + 10 && 
-                player.velY >= 0) {
+            // Bridge acts like platform when safe - only top collision
+            if (player.y + player.height > tile.y && 
+                player.y + player.height <= tile.y + tile.height + 15 && 
+                player.velY >= 0 &&
+                player.y < tile.y) { // Only land on top
+              player.y = tile.y - player.height;
+              player.velY = 0;
+              player.onGround = true;
+              onPlatform = true;
+            }
+          } else if (tile.type === 'safe_platform' && isSafe) {
+            // Safe platform collision - only top collision
+            if (player.y + player.height > tile.y && 
+                player.y + player.height <= tile.y + tile.height + 15 && 
+                player.velY >= 0 &&
+                player.y < tile.y) { // Only land on top
               player.y = tile.y - player.height;
               player.velY = 0;
               player.onGround = true;
@@ -169,25 +181,14 @@ export const CompleteGameCanvas = () => {
             }
           } else if (!isSafe) {
             // Hit danger state - player dies
-            console.log('💀 Player hit dangerous tile:', tile.type);
             playerDie();
             return;
-          } else if (tile.type === 'safe_platform' && isSafe) {
-            // Safe platform collision
-            if (player.y + player.height >= tile.y && 
-                player.y + player.height <= tile.y + tile.height + 10 && 
-                player.velY >= 0) {
-              player.y = tile.y - player.height;
-              player.velY = 0;
-              player.onGround = true;
-              onPlatform = true;
-            }
           }
         }
       });
 
       // Ground collision - fixed height for better performance
-      const groundY = 576; // Fixed ground position
+      const groundY = 568; // Fixed ground position (adjusted for 32px player)
       if (player.y + player.height >= groundY) {
         player.y = groundY - player.height;
         player.velY = 0;
@@ -195,8 +196,8 @@ export const CompleteGameCanvas = () => {
         onPlatform = true;
       }
 
-      // Keep in bounds - fixed width
-      player.x = Math.max(0, Math.min(768, player.x));
+      // Keep in bounds - fixed width (account for player width)
+      player.x = Math.max(0, Math.min(800 - player.width, player.x));
 
       // Check shard collection
       room.shards = room.shards.filter((shard, index) => {
@@ -226,8 +227,8 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Death condition - fall damage (fixed)
-      const deathY = 650; // Fixed death position
+      // Death condition - fall damage (fixed to canvas height)
+      const deathY = 600; // Fixed death position at canvas bottom
       if (player.y > deathY) {
         playerDie();
         return;
