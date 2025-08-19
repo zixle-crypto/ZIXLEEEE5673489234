@@ -345,23 +345,35 @@ export const useEngagementStore = create<EngagementState>()(
 
       purchasePowerUp: async (powerUpId: string) => {
         try {
+          console.log('🔄 Starting power-up purchase for ID:', powerUpId);
+          
           // Check authentication first
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
             console.error('❌ User not authenticated');
             return false;
           }
+          console.log('✅ User authenticated:', user.email);
 
           const powerUp = get().powerUps.find(p => p.id === powerUpId);
           if (!powerUp) {
-            console.error('❌ Power-up not found');
+            console.error('❌ Power-up not found for ID:', powerUpId);
+            console.log('Available power-ups:', get().powerUps.map(p => ({ id: p.id, name: p.name })));
             return false;
           }
+          console.log('✅ Power-up found:', powerUp.name, 'Cost:', powerUp.cost_shards);
 
           // Check if user has enough shards
           const { useUserDataStore } = await import('@/stores/userDataStore');
           const userDataStore = useUserDataStore.getState();
-          const { gameData } = userDataStore;
+          let { gameData } = userDataStore;
+          
+          // If gameData is null, try to load it
+          if (!gameData) {
+            console.log('⚠️ GameData not loaded, attempting to load...');
+            await userDataStore.loadUserData();
+            gameData = userDataStore.gameData;
+          }
           
           if (!gameData || gameData.total_shards < powerUp.cost_shards) {
             console.error('❌ Not enough shards for power-up purchase. Need:', powerUp.cost_shards, 'Have:', gameData?.total_shards || 0);
