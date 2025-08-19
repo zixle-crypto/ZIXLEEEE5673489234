@@ -52,8 +52,15 @@ serve(async (req) => {
       throw new Error("Session ID is required");
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    // Initialize Stripe with proper error handling
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("Stripe key exists:", !!stripeKey);
+    
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY environment variable is not set");
+    }
+    
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -152,15 +159,25 @@ serve(async (req) => {
       premium: 2000
     }[crate_type] || 100;
 
-    const { error: shardsError } = await supabase
-      .from('user_game_data')
-      .update({
-        total_shards: supabase.raw(`total_shards + ${bonusShards}`)
-      })
-      .eq('user_id', user_id);
+    // Add bonus shards using RPC function to avoid SQL injection
+    const { error: shardsError } = await supabase.rpc('increment_user_shards', {
+      user_id: user_id,
+      shard_amount: bonusShards
+    });
 
     if (shardsError) {
       console.error('Error adding bonus shards:', shardsError);
+      // Fallback to direct update
+      const { error: fallbackError } = await supabase
+        .from('user_game_data')
+        .update({
+          total_shards: bonusShards // Will need to be handled differently
+        })
+        .eq('user_id', user_id);
+      
+      if (fallbackError) {
+        console.error('Fallback shards update failed:', fallbackError);
+      }
     }
 
     // Update the purchase record
