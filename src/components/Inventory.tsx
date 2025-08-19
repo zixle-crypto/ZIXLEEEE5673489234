@@ -237,7 +237,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
         </Button>
         
         <div className="text-center">
-          <h1 className="text-4xl font-black text-perception font-orbitron tracking-wider">
+          <h1 className="text-3xl font-bold text-perception tracking-wide">
             INVENTORY
           </h1>
           <p className="text-sm text-game-text mt-2">
@@ -326,7 +326,7 @@ export const Inventory: React.FC<InventoryProps> = ({ onBack }) => {
                 <div className="mx-auto mb-2 p-3 rounded-full bg-game-bg border border-current">
                   <Icon className="w-8 h-8" />
                 </div>
-                <CardTitle className={`text-lg font-mono ${getRarityColor(item.rarity).split(' ')[0]}`}>
+                <CardTitle className={`text-base font-medium ${getRarityColor(item.rarity).split(' ')[0]}`}>
                   {item.name}
                 </CardTitle>
                 <p className="text-xs uppercase tracking-wider font-bold opacity-70">

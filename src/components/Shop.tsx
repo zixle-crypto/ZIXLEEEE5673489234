@@ -193,7 +193,7 @@ export const Shop: React.FC<ShopProps> = ({
         </Button>
         
         <div className="text-center">
-          <h1 className="text-4xl font-black text-perception font-orbitron tracking-wider">
+          <h1 className="text-3xl font-bold text-perception tracking-wide">
             CUBE SHOP
           </h1>
           <div className="flex items-center justify-center gap-2 mt-2">
@@ -258,7 +258,7 @@ export const Shop: React.FC<ShopProps> = ({
                 <div className={`mx-auto mb-2 p-3 rounded-lg border border-current ${getCubeVisual(item.rarity)}`}>
                   <Icon className="w-8 h-8 text-white drop-shadow-lg" />
                 </div>
-                <CardTitle className={`text-lg font-mono ${getRarityColor(item.rarity).split(' ')[0]}`}>
+                <CardTitle className={`text-base font-medium ${getRarityColor(item.rarity).split(' ')[0]}`}>
                   {item.name}
                 </CardTitle>
                 <p className="text-xs uppercase tracking-wider font-bold opacity-70">

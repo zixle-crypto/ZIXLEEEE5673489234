@@ -189,7 +189,7 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
         </Button>
         
         <div className="text-center">
-          <h1 className="text-4xl font-black text-perception font-orbitron tracking-wider">
+          <h1 className="text-3xl font-bold text-perception tracking-wide">
             CRATE SHOP
           </h1>
           <p className="text-game-text-dim text-sm mt-2">
@@ -241,7 +241,7 @@ export const CrateShop: React.FC<CrateShopProps> = ({ onBack, onRewardsReceived 
                 <div className={`mx-auto mb-4 p-4 rounded-xl border-2 border-game-border ${crate.visual.gradient} ${crate.visual.glow}`}>
                   <Icon className="w-12 h-12 text-white drop-shadow-lg" />
                 </div>
-                <CardTitle className="text-xl font-bold text-perception font-orbitron">
+                <CardTitle className="text-lg font-semibold text-perception">
                   {crate.name}
                 </CardTitle>
                 <p className="text-game-text-dim text-sm min-h-[40px]">
