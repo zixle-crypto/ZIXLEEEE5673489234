@@ -113,22 +113,13 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, user }) 
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button
-              onClick={signInWithGoogle}
-              className="w-full bg-white hover:bg-gray-100 text-black font-mono border border-gray-300"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? 'SIGNING IN...' : '🔗 CONTINUE WITH GOOGLE'}
-            </Button>
-            <Button
-              onClick={signInWithGitHub}
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-mono border border-gray-700"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? 'SIGNING IN...' : '🔗 CONTINUE WITH GITHUB'}
-            </Button>
+            <div className="p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+              <p className="text-sm text-yellow-800 font-mono">
+                ⚠️ OAuth providers need to be configured in Supabase Dashboard first.
+                <br />
+                <span className="text-xs">Skip to guest mode for now.</span>
+              </p>
+            </div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-game-border" />
