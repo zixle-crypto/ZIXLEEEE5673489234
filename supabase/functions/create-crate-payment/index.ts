@@ -89,13 +89,9 @@ serve(async (req) => {
     
     console.log("User authenticated:", user.email);
 
-    // Initialize Stripe with proper error handling
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    console.log("Stripe key exists:", !!stripeKey);
-    
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY environment variable is not set");
-    }
+    // Initialize Stripe with hardcoded secret key
+    const stripeKey = "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";
+    console.log("Stripe key configured");
     
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
