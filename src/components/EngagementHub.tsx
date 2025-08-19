@@ -97,6 +97,9 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
 
     const success = await purchasePowerUp(powerUp.id);
     if (success) {
+      // Trigger onPurchase callback to update totalShards in parent component
+      onPurchase(powerUp.cost_shards);
+      
       toast({
         title: "Power-Up Purchased!",
         description: `${powerUp.name} added to your inventory for ${powerUp.cost_shards} shards`,
