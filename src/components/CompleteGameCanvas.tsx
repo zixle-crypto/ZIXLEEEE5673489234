@@ -68,65 +68,64 @@ export const CompleteGameCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    // Optimized canvas setup - no resizing
+    // Fixed canvas setup - no dynamic resizing
     canvas.width = 800;
     canvas.height = 600;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.display = 'block';
-
-    // Force sync on mount and when playing starts
-    if (!isPlaying) {
-      // Game not started yet - keep initial positions
-      console.log('🎮 Game not playing - keeping initial spawn position');
-    } else {
-      // Game is playing - sync with store
+    
+    // Optimization settings
+    ctx.imageSmoothingEnabled = false;
+    
+    // Sync state on mount
+    if (isPlaying) {
       playerRef.current = { ...player };
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
-      console.log('🔄 Synced player position:', player.x, player.y);
     }
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     canvas.addEventListener('mousemove', handleMouseMove);
 
-    // Game update logic - highly optimized for 60fps
-    let lastUpdateTime = 0;
+    // Ultra-fast game loop
+    let lastTime = 0;
     const targetFPS = 60;
-    const frameTime = 1000 / targetFPS;
-    
-    const updateGame = (currentTime: number) => {
-      if (!isPlaying || isPaused || isGameOver) return;
+    const frameInterval = 1000 / targetFPS;
 
-      // Throttle updates to 60fps max
-      if (currentTime - lastUpdateTime < frameTime) return;
-      lastUpdateTime = currentTime;
+    const gameLoop = (currentTime: number) => {
+      if (currentTime - lastTime < frameInterval) {
+        animationRef.current = requestAnimationFrame(gameLoop);
+        return;
+      }
+      lastTime = currentTime;
+
+      if (!isPlaying || isPaused || isGameOver) {
+        animationRef.current = requestAnimationFrame(gameLoop);
+        return;
+      }
 
       const player = playerRef.current;
       const keys = keysRef.current;
       const room = currentRoomRef.current;
       const cursor = cursorRef.current;
 
-      // Only update tile attention every 3rd frame for better performance
-      if (Math.floor(currentTime / frameTime) % 3 === 0) {
+      // Update tiles every 4th frame only
+      if (Math.floor(currentTime / frameInterval) % 4 === 0) {
         for (let i = 0; i < room.tiles.length; i++) {
           const tile = room.tiles[i];
-          const dx = cursor.x - (tile.x + tile.width * 0.5);
-          const dy = cursor.y - (tile.y + tile.height * 0.5);
+          const dx = cursor.x - (tile.x + 32);
+          const dy = cursor.y - (tile.y + 16);
           tile.isAttended = (dx * dx + dy * dy) < 6400;
         }
       }
 
-      // Handle keyboard input - cached key checks
+      // Input handling
       const leftPressed = keys.has('KeyA') || keys.has('ArrowLeft');
       const rightPressed = keys.has('KeyD') || keys.has('ArrowRight');
       const jumpPressed = (keys.has('KeyW') || keys.has('ArrowUp') || keys.has('Space')) && player.onGround;
 
-      // Apply input
       player.velX = leftPressed ? -5 : rightPressed ? 5 : 0;
       
       if (jumpPressed) {
@@ -134,19 +133,14 @@ export const CompleteGameCanvas = () => {
         player.onGround = false;
       }
 
-      // Apply physics
-      if (!player.onGround) {
-        player.velY += 0.5; // gravity
-      }
-
-      // Update position
+      // Physics
+      if (!player.onGround) player.velY += 0.5;
       player.x += player.velX;
       player.y += player.velY;
 
-      // Platform collision - optimized loop
+      // Platform collisions - optimized
       let onPlatform = false;
-      for (let i = 0; i < room.platforms.length; i++) {
-        const platform = room.platforms[i];
+      for (const platform of room.platforms) {
         if (player.x < platform.x + platform.width &&
             player.x + 32 > platform.x &&
             player.y + 32 > platform.y &&
@@ -156,23 +150,20 @@ export const CompleteGameCanvas = () => {
           player.velY = 0;
           player.onGround = true;
           onPlatform = true;
-          break; // Exit early once we find a collision
+          break;
         }
       }
 
-      // Tile collision - optimized with early returns
-      for (let i = 0; i < room.tiles.length; i++) {
-        const tile = room.tiles[i];
-        const isColliding = player.x < tile.x + tile.width &&
-                           player.x + 32 > tile.x &&
-                           player.y < tile.y + tile.height &&
-                           player.y + 32 > tile.y;
-
-        if (isColliding) {
+      // Tile collisions
+      for (const tile of room.tiles) {
+        if (player.x < tile.x + tile.width &&
+            player.x + 32 > tile.x &&
+            player.y < tile.y + tile.height &&
+            player.y + 32 > tile.y) {
+          
           const isSafe = tile.safeWhenAttended ? tile.isAttended : !tile.isAttended;
           
           if ((tile.type === 'bridge' || tile.type === 'safe_platform') && isSafe) {
-            // Platform collision - only top collision
             if (player.y + 32 > tile.y && 
                 player.y + 32 <= tile.y + tile.height + 15 && 
                 player.velY >= 0 &&
@@ -183,119 +174,85 @@ export const CompleteGameCanvas = () => {
               onPlatform = true;
             }
           } else if (!isSafe) {
-            // Hit danger state - immediate death
             playerDie();
+            animationRef.current = requestAnimationFrame(gameLoop);
             return;
           }
         }
       }
 
-      // Ground collision - optimized
-      if (player.y >= 536) { // 568 - 32 for player height
+      // Ground collision
+      if (player.y >= 536) {
         player.y = 536;
         player.velY = 0;
         player.onGround = true;
-        onPlatform = true;
       }
 
-      // Keep in bounds
+      // Bounds
       if (player.x < 0) player.x = 0;
-      else if (player.x > 768) player.x = 768; // 800 - 32
+      else if (player.x > 768) player.x = 768;
 
-      // Check shard collection - optimized with distance squared
+      // Shard collection
       for (let i = room.shards.length - 1; i >= 0; i--) {
         const shard = room.shards[i];
-        const dx = player.x + 16 - shard.x; // Center of player
+        const dx = player.x + 16 - shard.x;
         const dy = player.y + 16 - shard.y;
-        if (dx * dx + dy * dy < 900) { // 30px radius squared
+        if (dx * dx + dy * dy < 900) {
           collectShard(i);
           room.shards.splice(i, 1);
         }
       }
 
-      // Check if all shards collected
       room.exitActive = room.shards.length === 0;
 
-      // Check exit collision - optimized
+      // Exit collision
       if (room.exitActive) {
         const dx = player.x + 16 - room.exit.x;
         const dy = player.y + 16 - room.exit.y;
-        if (dx * dx + dy * dy < 1600) { // 40px radius squared
+        if (dx * dx + dy * dy < 1600) {
           nextRoom();
+          animationRef.current = requestAnimationFrame(gameLoop);
           return;
         }
       }
 
-      // Death condition - fall damage at bottom
       if (player.y > 600) {
         playerDie();
+        animationRef.current = requestAnimationFrame(gameLoop);
         return;
       }
-    };
 
-    // Optimized render function - minimal draw calls
-    const render = () => {
-      const room = currentRoomRef.current;
-      
-      // Clear canvas once
+      // ULTRA FAST RENDERING
       ctx.fillStyle = '#1a1f2e';
       ctx.fillRect(0, 0, 800, 600);
 
-      // Draw ground first
+      // Ground
       ctx.fillStyle = '#2a2f3e';
       ctx.fillRect(0, 568, 800, 32);
 
-      // Draw platforms - batch similar operations
+      // Platforms
       ctx.fillStyle = '#2a2f3e';
-      room.platforms.forEach(platform => {
+      for (const platform of room.platforms) {
         ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-      });
+      }
 
-      // Draw tiles - optimized state checking
-      for (let i = 0; i < room.tiles.length; i++) {
-        const tile = room.tiles[i];
+      // Tiles - simplified rendering
+      for (const tile of room.tiles) {
         const isSafe = tile.safeWhenAttended ? tile.isAttended : !tile.isAttended;
         
         if (tile.type === 'bridge' && isSafe) {
           ctx.fillStyle = '#4ade80';
           ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
-        } else if (tile.type === 'danger_spike') {
+        } else if ((tile.type === 'danger_spike' || tile.type === 'safe_platform')) {
           if (isSafe) {
             ctx.fillStyle = '#4ade80';
             ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
           } else {
-            // Draw spikes more efficiently
             ctx.fillStyle = '#ef4444';
-            const spikes = Math.floor(tile.width / 8);
-            for (let j = 0; j < spikes; j++) {
-              const x = tile.x + j * 8;
-              ctx.beginPath();
-              ctx.moveTo(x, tile.y + tile.height);
-              ctx.lineTo(x + 4, tile.y);
-              ctx.lineTo(x + 8, tile.y + tile.height);
-              ctx.fill();
-            }
-          }
-        } else if (tile.type === 'safe_platform') {
-          if (isSafe) {
-            ctx.fillStyle = '#4ade80';
             ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
-          } else {
-            // Draw spikes
-            ctx.fillStyle = '#ef4444';
-            const spikes = Math.floor(tile.width / 8);
-            for (let j = 0; j < spikes; j++) {
-              const x = tile.x + j * 8;
-              ctx.beginPath();
-              ctx.moveTo(x, tile.y + tile.height);
-              ctx.lineTo(x + 4, tile.y);
-              ctx.lineTo(x + 8, tile.y + tile.height);
-              ctx.fill();
-            }
           }
         }
 
-        // Draw attention indicator
         if (tile.isAttended) {
           ctx.strokeStyle = '#20d4d4';
           ctx.lineWidth = 2;
@@ -303,51 +260,28 @@ export const CompleteGameCanvas = () => {
         }
       }
 
-      // Draw player - reduced glow operations
-      const player = playerRef.current;
-      
-      // Main body
+      // Player - no glow for performance
       ctx.fillStyle = '#20d4d4';
       ctx.fillRect(player.x, player.y, 32, 32);
-
-      // Single glow pass
-      ctx.shadowColor = '#20d4d4';
-      ctx.shadowBlur = 10;
-      ctx.fillRect(player.x, player.y, 32, 32);
-      ctx.shadowBlur = 0;
-      
-      // Border
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.strokeRect(player.x, player.y, 32, 32);
 
-      // Draw shards - highly optimized
-      if (room.shards.length > 0) {
-        const time = Date.now() * 0.002;
-        ctx.shadowColor = '#fbbf24';
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = '#fbbf24';
-        
-        for (let i = 0; i < room.shards.length; i++) {
-          const shard = room.shards[i];
-          const radius = 8 + Math.sin(time + i) * 2;
-          ctx.beginPath();
-          ctx.arc(shard.x, shard.y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.shadowBlur = 0;
+      // Shards - minimal animation
+      ctx.fillStyle = '#fbbf24';
+      for (const shard of room.shards) {
+        ctx.beginPath();
+        ctx.arc(shard.x, shard.y, 8, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Draw exit portal - performance optimized
+      // Exit - no animation
       const exit = room.exit;
       if (room.exitActive) {
         ctx.fillStyle = '#06b6d4';
-        ctx.shadowColor = '#06b6d4';
-        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(exit.x, exit.y, 22, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       } else {
         ctx.strokeStyle = '#6b7280';
         ctx.lineWidth = 2;
@@ -356,42 +290,28 @@ export const CompleteGameCanvas = () => {
         ctx.stroke();
       }
 
-      // Draw cursor indicator - only when active
+      // Cursor - simplified
       if (isPlaying && !isPaused && !isGameOver) {
-        const cursor = cursorRef.current;
-        ctx.strokeStyle = 'hsla(180, 100%, 45%, 0.6)';
+        ctx.strokeStyle = '#20d4d4';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(cursor.x, cursor.y, 80, 0, Math.PI * 2);
         ctx.stroke();
-
-        ctx.fillStyle = 'hsla(180, 100%, 45%, 0.8)';
+        
+        ctx.fillStyle = '#20d4d4';
         ctx.beginPath();
         ctx.arc(cursor.x, cursor.y, 2, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Draw UI - optimized text rendering
+      // UI - minimal text
       ctx.fillStyle = '#ffffff';
       ctx.font = '16px monospace';
-      ctx.fillText(`Room ${roomNumberRef.current}/100 | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
-      
-      if (roomNumberRef.current <= 100) {
-        const difficulty = Math.floor((roomNumberRef.current - 1) / 10) + 1;
-        ctx.fillText(`Difficulty: ${difficulty}/10 | Move cursor to change tiles!`, 10, 50);
-      } else {
-        ctx.fillText(`🎉 CONGRATULATIONS! All 100 rooms completed! 🎉`, 10, 50);
-      }
-    };
+      ctx.fillText(`Room ${roomNumberRef.current} | Score: ${score} | Shards: ${room.shards.length}`, 10, 30);
 
-    // Optimized game loop with frame timing
-    const gameLoop = (timestamp: number) => {
-      updateGame(timestamp);
-      render();
       animationRef.current = requestAnimationFrame(gameLoop);
     };
 
-    // Start immediately without delay
     animationRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
@@ -402,16 +322,13 @@ export const CompleteGameCanvas = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove]); 
+  }, [handleKeyDown, handleKeyUp, handleMouseMove]);
 
-  // Separate useEffect to handle respawn/restart events and room transitions  
   useEffect(() => {
-    // Force sync when room changes or player respawns
     if (currentRoom.id !== currentRoomRef.current.id || !isPlaying) {
       playerRef.current = { ...player };
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
-      console.log(`🔄 Room ${roomsCleared + 1} - Player spawned at (${player.x}, ${player.y})`);
     }
   }, [currentRoom.id, roomsCleared, isPlaying, player.x, player.y]);
 
