@@ -209,15 +209,22 @@ export const useEngagementStore = create<EngagementState>()(
 
       loadDailyChallenges: async () => {
         try {
-          console.log('🔍 Loading daily challenges for date:', new Date().toISOString().split('T')[0]);
+          // Get today's date in YYYY-MM-DD format in UTC
+          const today = new Date();
+          const todayStr = today.toISOString().split('T')[0];
+          console.log('🔍 Loading daily challenges for date:', todayStr);
+          
           const { data, error } = await supabase
             .from('daily_challenges')
             .select('*')
-            .eq('active_date', new Date().toISOString().split('T')[0])
+            .eq('active_date', todayStr)
             .order('difficulty', { ascending: true });
           
           if (error) throw error;
-          console.log('✅ Daily challenges loaded:', data?.length || 0);
+          console.log('✅ Daily challenges loaded:', data?.length || 0, 'challenges');
+          if (data) {
+            console.log('Challenge titles:', data.map(c => c.title));
+          }
           set({ dailyChallenges: (data || []) as DailyChallenge[] });
         } catch (error) {
           console.error('❌ Error loading daily challenges:', error);
@@ -369,20 +376,23 @@ export const useEngagementStore = create<EngagementState>()(
           }
           console.log('✅ Power-up found:', powerUp.name, 'Cost:', powerUp.cost_shards);
 
-          // Check if user has enough shards
-          const { useUserDataStore } = await import('@/stores/userDataStore');
-          const userDataStore = useUserDataStore.getState();
-          let { gameData } = userDataStore;
+          // Get current shards directly from database to ensure accuracy
+          const { data: gameData, error: shardError } = await supabase
+            .from('user_game_data')
+            .select('total_shards')
+            .eq('user_id', user.id)
+            .single();
           
-          // If gameData is null, try to load it
-          if (!gameData) {
-            console.log('⚠️ GameData not loaded, attempting to load...');
-            await userDataStore.loadUserData();
-            gameData = userDataStore.gameData;
+          if (shardError) {
+            console.error('❌ Error fetching current shards:', shardError);
+            return false;
           }
+
+          const currentShards = gameData?.total_shards || 0;
+          console.log('💰 Current shards from DB:', currentShards, 'Required:', powerUp.cost_shards);
           
-          if (!gameData || gameData.total_shards < powerUp.cost_shards) {
-            console.error('❌ Not enough shards for power-up purchase. Need:', powerUp.cost_shards, 'Have:', gameData?.total_shards || 0);
+          if (currentShards < powerUp.cost_shards) {
+            console.error('❌ Not enough shards for power-up purchase. Need:', powerUp.cost_shards, 'Have:', currentShards);
             return false;
           }
 
@@ -390,6 +400,7 @@ export const useEngagementStore = create<EngagementState>()(
           const existingUserPowerUp = get().userPowerUps.find(up => up.power_up_id === powerUpId);
           const newQuantity = existingUserPowerUp ? existingUserPowerUp.quantity + 1 : 1;
 
+          // Start transaction: First add power-up to inventory
           const { data, error } = await supabase
             .from('user_power_ups')
             .upsert({
@@ -402,20 +413,42 @@ export const useEngagementStore = create<EngagementState>()(
             .select();
 
           if (error) {
-            console.error('❌ Database error:', error);
+            console.error('❌ Database error adding power-up:', error);
             return false;
           }
 
-          // Only deduct shards after successful database operation
-          await userDataStore.updateShards(-powerUp.cost_shards);
+          // Then deduct shards
+          const { error: shardUpdateError } = await supabase
+            .from('user_game_data')
+            .update({ total_shards: currentShards - powerUp.cost_shards })
+            .eq('user_id', user.id);
+
+          if (shardUpdateError) {
+            console.error('❌ Error deducting shards:', shardUpdateError);
+            // Try to rollback the power-up addition
+            if (existingUserPowerUp) {
+              await supabase
+                .from('user_power_ups')
+                .update({ quantity: existingUserPowerUp.quantity })
+                .eq('id', existingUserPowerUp.id);
+            } else {
+              await supabase
+                .from('user_power_ups')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('power_up_id', powerUpId);
+            }
+            return false;
+          }
           
           console.log(`💰 Power-up purchased: ${powerUp.name} - Cost: ${powerUp.cost_shards} shards`);
+          console.log(`💎 New shard balance: ${currentShards - powerUp.cost_shards}`);
           
-          // Reload user power-ups
+          // Reload user power-ups to show updated quantity
           await get().loadUserPowerUps();
           return true;
         } catch (error) {
-          console.error('Error purchasing power-up:', error);
+          console.error('❌ Error purchasing power-up:', error);
           return false;
         }
       },

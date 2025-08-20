@@ -118,6 +118,7 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
       return;
     }
 
+    console.log('🔄 Attempting purchase...');
     const success = await purchasePowerUp(powerUp.id);
     console.log('🔄 Purchase result:', success);
     
@@ -132,8 +133,8 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
     } else {
       console.error('❌ Purchase failed - checking logs above for details');
       toast({
-        title: "Purchase Failed",
-        description: "Could not complete the purchase. Please try again.",
+        title: "Purchase Failed", 
+        description: "Could not complete the purchase. Please check if you have enough shards and try again.",
         variant: "destructive"
       });
     }
