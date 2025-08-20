@@ -145,15 +145,17 @@ export const useEngagementStore = create<EngagementState>()(
 
       loadAchievements: async () => {
         try {
+          console.log('🔍 Loading achievements...');
           const { data, error } = await supabase
             .from('achievements')
             .select('*')
             .order('rarity', { ascending: true });
           
           if (error) throw error;
+          console.log('✅ Achievements loaded:', data?.length || 0);
           set({ achievements: (data || []) as Achievement[] });
         } catch (error) {
-          console.error('Error loading achievements:', error);
+          console.error('❌ Error loading achievements:', error);
         }
       },
 
@@ -175,15 +177,17 @@ export const useEngagementStore = create<EngagementState>()(
 
       loadPowerUps: async () => {
         try {
+          console.log('🔍 Loading power-ups...');
           const { data, error } = await supabase
             .from('power_ups')
             .select('*')
             .order('cost_shards', { ascending: true });
           
           if (error) throw error;
+          console.log('✅ Power-ups loaded:', data?.length || 0);
           set({ powerUps: (data || []) as PowerUp[] });
         } catch (error) {
-          console.error('Error loading power-ups:', error);
+          console.error('❌ Error loading power-ups:', error);
         }
       },
 
@@ -205,6 +209,7 @@ export const useEngagementStore = create<EngagementState>()(
 
       loadDailyChallenges: async () => {
         try {
+          console.log('🔍 Loading daily challenges for date:', new Date().toISOString().split('T')[0]);
           const { data, error } = await supabase
             .from('daily_challenges')
             .select('*')
@@ -212,9 +217,10 @@ export const useEngagementStore = create<EngagementState>()(
             .order('difficulty', { ascending: true });
           
           if (error) throw error;
+          console.log('✅ Daily challenges loaded:', data?.length || 0);
           set({ dailyChallenges: (data || []) as DailyChallenge[] });
         } catch (error) {
-          console.error('Error loading daily challenges:', error);
+          console.error('❌ Error loading daily challenges:', error);
         }
       },
 

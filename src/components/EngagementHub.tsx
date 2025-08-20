@@ -11,6 +11,7 @@ import {
 import { useEngagementStore } from '@/stores/engagementStore';
 import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EngagementHubProps {
   onBack: () => void;
@@ -50,15 +51,32 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
   const [celebrationAchievement, setCelebrationAchievement] = useState<any>(null);
 
   useEffect(() => {
-    // Load all data
-    loadAchievements();
-    loadUserAchievements();
-    loadPowerUps();
-    loadUserPowerUps();
-    loadDailyChallenges();
-    loadUserChallengeProgress();
-    loadStreaks();
-    loadBonusEvents();
+    // Load all data with error handling
+    const loadAllData = async () => {
+      try {
+        console.log('🔄 Loading engagement data...');
+        await Promise.all([
+          loadAchievements(),
+          loadUserAchievements(),
+          loadPowerUps(),
+          loadUserPowerUps(),
+          loadDailyChallenges(),
+          loadUserChallengeProgress(),
+          loadStreaks(),
+          loadBonusEvents()
+        ]);
+        console.log('✅ All engagement data loaded');
+      } catch (error) {
+        console.error('❌ Failed to load engagement data:', error);
+        toast({
+          title: "Loading Error",
+          description: "Failed to load some data. Please refresh the page.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    loadAllData();
 
     // Set up interval to clean expired power-ups
     const interval = setInterval(removeExpiredPowerUps, 1000);
@@ -87,19 +105,19 @@ export const EngagementHub: React.FC<EngagementHubProps> = ({
 
   const handlePowerUpPurchase = async (powerUp: any) => {
     console.log('🛒 Starting purchase for power-up:', powerUp.name, 'ID:', powerUp.id);
-    console.log('💰 Current shards:', totalShards, 'Required:', powerUp.cost_shards);
+    console.log('💰 Current shards from props:', totalShards, 'Required:', powerUp.cost_shards);
     
-    if (totalShards < powerUp.cost_shards) {
-      console.log('❌ Not enough shards for purchase');
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast({
-        title: "Not Enough Shards",
-        description: `You need ${powerUp.cost_shards} shards to buy this power-up`,
+        title: "Authentication Required",
+        description: "Please log in to purchase power-ups",
         variant: "destructive"
       });
       return;
     }
 
-    console.log('✅ Sufficient shards, proceeding with purchase...');
     const success = await purchasePowerUp(powerUp.id);
     console.log('🔄 Purchase result:', success);
     
