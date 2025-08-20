@@ -94,23 +94,31 @@ export const CompleteGameCanvas = () => {
     window.addEventListener('keyup', handleKeyUp);
     canvas.addEventListener('mousemove', handleMouseMove);
 
-    // Game update logic - optimized for performance
-    const updateGame = () => {
+    // Game update logic - highly optimized for 60fps
+    let lastUpdateTime = 0;
+    const targetFPS = 60;
+    const frameTime = 1000 / targetFPS;
+    
+    const updateGame = (currentTime: number) => {
       if (!isPlaying || isPaused || isGameOver) return;
+
+      // Throttle updates to 60fps max
+      if (currentTime - lastUpdateTime < frameTime) return;
+      lastUpdateTime = currentTime;
 
       const player = playerRef.current;
       const keys = keysRef.current;
       const room = currentRoomRef.current;
-
-      // Cache cursor position to avoid repeated access
       const cursor = cursorRef.current;
 
-      // Update tile attention states - optimized with early exit
-      for (let i = 0; i < room.tiles.length; i++) {
-        const tile = room.tiles[i];
-        const dx = cursor.x - (tile.x + tile.width * 0.5);
-        const dy = cursor.y - (tile.y + tile.height * 0.5);
-        tile.isAttended = (dx * dx + dy * dy) < 6400; // 80px radius squared
+      // Only update tile attention every 3rd frame for better performance
+      if (Math.floor(currentTime / frameTime) % 3 === 0) {
+        for (let i = 0; i < room.tiles.length; i++) {
+          const tile = room.tiles[i];
+          const dx = cursor.x - (tile.x + tile.width * 0.5);
+          const dy = cursor.y - (tile.y + tile.height * 0.5);
+          tile.isAttended = (dx * dx + dy * dy) < 6400;
+        }
       }
 
       // Handle keyboard input - cached key checks
@@ -313,18 +321,16 @@ export const CompleteGameCanvas = () => {
       ctx.lineWidth = 2;
       ctx.strokeRect(player.x, player.y, 32, 32);
 
-      // Draw shards - optimized animation
+      // Draw shards - highly optimized
       if (room.shards.length > 0) {
-        const time = Date.now() * 0.003; // Slower animation for better performance
-        ctx.shadowColor = 'hsl(45, 100%, 60%)';
-        ctx.shadowBlur = 10;
+        const time = Date.now() * 0.002;
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#fbbf24';
         
         for (let i = 0; i < room.shards.length; i++) {
           const shard = room.shards[i];
-          const pulse = Math.sin(time + i * 0.5) * 0.15 + 0.85;
-          const radius = 8 * pulse;
-          
-          ctx.fillStyle = `hsl(45, 100%, ${Math.floor(60 * pulse)}%)`;
+          const radius = 8 + Math.sin(time + i) * 2;
           ctx.beginPath();
           ctx.arc(shard.x, shard.y, radius, 0, Math.PI * 2);
           ctx.fill();
@@ -332,20 +338,18 @@ export const CompleteGameCanvas = () => {
         ctx.shadowBlur = 0;
       }
 
-      // Draw exit portal - optimized
+      // Draw exit portal - performance optimized
       const exit = room.exit;
       if (room.exitActive) {
-        const time = Date.now() * 0.002;
-        const pulse = Math.sin(time) * 0.15 + 0.85;
-        ctx.fillStyle = `hsl(180, 100%, ${Math.floor(45 * pulse)}%)`;
-        ctx.shadowColor = 'hsl(180, 100%, 45%)';
-        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.arc(exit.x, exit.y, 25 * pulse, 0, Math.PI * 2);
+        ctx.arc(exit.x, exit.y, 22, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       } else {
-        ctx.strokeStyle = 'hsl(0, 0%, 50%)';
+        ctx.strokeStyle = '#6b7280';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(exit.x, exit.y, 20, 0, Math.PI * 2);
@@ -380,9 +384,9 @@ export const CompleteGameCanvas = () => {
       }
     };
 
-    // Simple game loop - minimal overhead
-    const gameLoop = () => {
-      updateGame();
+    // Optimized game loop with frame timing
+    const gameLoop = (timestamp: number) => {
+      updateGame(timestamp);
       render();
       animationRef.current = requestAnimationFrame(gameLoop);
     };
