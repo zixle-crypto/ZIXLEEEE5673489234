@@ -209,15 +209,11 @@ export const useEngagementStore = create<EngagementState>()(
 
       loadDailyChallenges: async () => {
         try {
-          // Get today's date in YYYY-MM-DD format in UTC
-          const today = new Date();
-          const todayStr = today.toISOString().split('T')[0];
-          console.log('🔍 Loading daily challenges for date:', todayStr);
+          console.log('🔍 Loading daily challenges...');
           
           const { data, error } = await supabase
             .from('daily_challenges')
             .select('*')
-            .eq('active_date', todayStr)
             .order('difficulty', { ascending: true });
           
           if (error) throw error;
