@@ -151,6 +151,7 @@ serve(async (req) => {
       stripe_session_id: session.id,
       crate_type: crateType,
       amount: crateInfo.price,
+      currency: "usd",
       status: "pending"
     });
 
