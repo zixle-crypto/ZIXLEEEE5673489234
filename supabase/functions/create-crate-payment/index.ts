@@ -97,7 +97,8 @@ serve(async (req) => {
       console.error("STRIPE_SECRET_KEY environment variable not found");
       throw new Error("Stripe configuration error");
     }
-    console.log("Stripe key configured");
+    console.log("Stripe key configured, starts with:", stripeKey.substring(0, 7));
+    console.log("Stripe key length:", stripeKey.length);
     
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
