@@ -54,6 +54,7 @@ serve(async (req) => {
   try {
     console.log("=== CRATE PAYMENT FUNCTION STARTED ===");
     console.log("Environment check - STRIPE_SECRET_KEY exists:", !!Deno.env.get("STRIPE_SECRET_KEY"));
+    console.log("Function deployed with updated secrets");
     
     const { crateType } = await req.json();
     console.log("Requested crate type:", crateType);
