@@ -105,6 +105,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             SHOP
           </Button>
           
+          {/* CRATES TEMPORARILY DISABLED */}
+          {/*
           <Button
             onClick={onCrateShop}
             variant="outline"
@@ -113,6 +115,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <Gem className="w-6 h-6" />
             CRATES
           </Button>
+          */}
           
           <Button
             onClick={onInventory}
