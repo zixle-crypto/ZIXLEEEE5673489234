@@ -15,21 +15,6 @@ export const GameCanvas = () => {
   const lastTimeRef = useRef<number>(0);
   const keysRef = useRef<Set<string>>(new Set());
 
-  const {
-    player,
-    currentRoom,
-    cursor,
-    isPlaying,
-    isPaused,
-    isGameOver,
-    updatePlayer,
-    updateCursor,
-    handleInput,
-    collectShard,
-    playerDie
-  } = useGameStore();
-
-  const { gameData } = useUserDataStore();
 
   // Handle keyboard input
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -50,13 +35,14 @@ export const GameCanvas = () => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    updateCursor(x, y);
-  }, [updateCursor]);
+    useGameStore.getState().updateCursor(x, y);
+  }, []);
 
   // Get equipped cube color
   const getEquippedCubeColor = () => {
+    const gameData = useUserDataStore.getState().gameData;
     if (!gameData?.equipped_cube_id) return '#20d4d4'; // Default cyan
-    
+
     const cubeId = gameData.equipped_cube_id;
     if (cubeId.includes('copper')) return '#B87333';
     if (cubeId.includes('bronze')) return '#CD7F32'; 
@@ -74,6 +60,7 @@ export const GameCanvas = () => {
 
   // Render function - clean with no console spam
   const render = useCallback(() => {
+    const { player, currentRoom, cursor, isPlaying, isGameOver } = useGameStore.getState();
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) {
@@ -168,19 +155,29 @@ export const GameCanvas = () => {
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  }, [player, currentRoom, cursor, isPlaying, isGameOver, gameData]);
+  }, []);
 
   // Game loop - clean with no console spam
   const gameLoop = useCallback((currentTime: number) => {
+    const {
+      isPlaying,
+      isPaused,
+      isGameOver,
+      currentRoom,
+      player,
+      handleInput,
+      updatePlayer,
+      collectShard,
+      playerDie
+    } = useGameStore.getState();
+
     const deltaTime = currentTime - lastTimeRef.current;
     lastTimeRef.current = currentTime;
 
     if (isPlaying && !isPaused && !isGameOver) {
-      // Update game state
       handleInput(keysRef.current);
       updatePlayer(deltaTime);
 
-      // Check shard collection
       if (currentRoom?.shards && player) {
         currentRoom.shards.forEach((shard, index) => {
           const distance = Math.sqrt(
@@ -192,18 +189,14 @@ export const GameCanvas = () => {
         });
       }
 
-      // Death condition
       if (player && player.y > CANVAS_HEIGHT + 50) {
         playerDie();
       }
     }
 
-    // Render
     render();
-
-    // Continue loop
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, isPaused, isGameOver, player, currentRoom, handleInput, updatePlayer, collectShard, playerDie, render]);
+  }, [render]);
 
   // Setup canvas and game loop
   useEffect(() => {
