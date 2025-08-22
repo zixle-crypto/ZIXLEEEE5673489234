@@ -20,6 +20,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 import { CrateShop } from './CrateShop';
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 
 
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop' | 'engagementHub';
@@ -33,6 +34,15 @@ export const CleanPerceptionShift = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const { start: startMusic, stop: stopMusic } = useBackgroundMusic();
+
+  useEffect(() => {
+    if (currentScreen === 'game') {
+      startMusic();
+    } else {
+      stopMusic();
+    }
+  }, [currentScreen, startMusic, stopMusic]);
 
   useEffect(() => {
     let mounted = true;

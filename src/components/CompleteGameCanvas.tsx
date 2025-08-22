@@ -330,7 +330,7 @@ export const CompleteGameCanvas = () => {
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
-  }, [currentRoom.id, roomsCleared, isPlaying, player.x, player.y]);
+  }, [currentRoom.id, roomsCleared, isPlaying]);
 
     return (
     <div className="w-full h-full flex items-center justify-center relative">
