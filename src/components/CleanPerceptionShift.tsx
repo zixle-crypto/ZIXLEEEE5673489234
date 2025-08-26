@@ -34,6 +34,7 @@ export const CleanPerceptionShift = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [showGameInstructions, setShowGameInstructions] = useState(false);
   const { start: startMusic, stop: stopMusic } = useBackgroundMusic();
 
   useEffect(() => {
@@ -178,11 +179,20 @@ export const CleanPerceptionShift = () => {
   useEffect(() => {
     if (currentScreen === 'game') {
       console.log('🎯 Game screen detected - calling initGame()');
+      // Show instructions when entering game
+      setShowGameInstructions(true);
+      // Hide instructions after 4 seconds
+      const timer = setTimeout(() => {
+        setShowGameInstructions(false);
+      }, 4000);
+      
       // Ensure clean initialization without delay to prevent freezing
       requestAnimationFrame(() => {
         initGame();
         console.log('✅ initGame() called');
       });
+      
+      return () => clearTimeout(timer);
     }
   }, [currentScreen, initGame]);
 
@@ -382,6 +392,20 @@ export const CleanPerceptionShift = () => {
         <div className="w-full aspect-[4/3] max-w-[1000px] max-h-[750px] mx-auto relative">
           <CompleteGameCanvas />
           <GameHUD />
+          
+          {/* Game Instructions Overlay */}
+          {showGameInstructions && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-in fade-in duration-500">
+              <div className="bg-game-surface border border-perception rounded-lg p-6 text-center max-w-md mx-4">
+                <h3 className="text-perception text-xl font-bold mb-3">HOW TO PLAY</h3>
+                <div className="text-game-text space-y-2">
+                  <p className="text-lg">Move with <span className="text-perception font-bold">WASD</span> or <span className="text-perception font-bold">Arrow Keys</span></p>
+                  <p className="text-lg">Collect <span className="text-perception font-bold">⬟ Golden Shards</span> to complete rooms</p>
+                </div>
+                <p className="text-game-text-dim text-sm mt-4">Instructions will disappear in a few seconds...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
