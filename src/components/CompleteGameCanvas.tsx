@@ -20,6 +20,7 @@ export const CompleteGameCanvas = () => {
   const {
     player,
     currentRoom,
+    cursor,
     roomsCleared,
     score,
     isPlaying,
@@ -78,12 +79,14 @@ export const CompleteGameCanvas = () => {
     // Optimization settings
     ctx.imageSmoothingEnabled = false;
     
-    // Sync state on mount
+    // Sync state on mount and ensure cursor is initialized
     if (isPlaying) {
       playerRef.current = { ...player };
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
+    // Always sync cursor from store to ensure consistency
+    cursorRef.current = { x: cursor.x, y: cursor.y };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -121,14 +124,16 @@ export const CompleteGameCanvas = () => {
       const player = playerRef.current;
       const keys = keysRef.current;
       const room = currentRoomRef.current;
-      const cursor = cursorRef.current;
+      // Always use cursor from store to ensure consistency
+      const cursorPos = { x: cursor.x, y: cursor.y };
+      cursorRef.current = cursorPos;
 
       // Update tiles every 4th frame only
       if (Math.floor(currentTime / frameInterval) % 4 === 0) {
         for (let i = 0; i < room.tiles.length; i++) {
           const tile = room.tiles[i];
-          const dx = cursor.x - (tile.x + 32);
-          const dy = cursor.y - (tile.y + 16);
+          const dx = cursorPos.x - (tile.x + 32);
+          const dy = cursorPos.y - (tile.y + 16);
           tile.isAttended = (dx * dx + dy * dy) < 6400;
         }
       }
@@ -302,30 +307,30 @@ export const CompleteGameCanvas = () => {
         ctx.strokeStyle = 'rgba(32, 212, 212, 0.4)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 80, 0, Math.PI * 2);
+        ctx.arc(cursorPos.x, cursorPos.y, 80, 0, Math.PI * 2);
         ctx.stroke();
         
         // Inner attention radius
         ctx.strokeStyle = 'rgba(32, 212, 212, 0.8)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 40, 0, Math.PI * 2);
+        ctx.arc(cursorPos.x, cursorPos.y, 40, 0, Math.PI * 2);
         ctx.stroke();
         
         // Center crosshair
         ctx.strokeStyle = '#20d4d4';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(cursor.x - 8, cursor.y);
-        ctx.lineTo(cursor.x + 8, cursor.y);
-        ctx.moveTo(cursor.x, cursor.y - 8);
-        ctx.lineTo(cursor.x, cursor.y + 8);
+        ctx.moveTo(cursorPos.x - 8, cursorPos.y);
+        ctx.lineTo(cursorPos.x + 8, cursorPos.y);
+        ctx.moveTo(cursorPos.x, cursorPos.y - 8);
+        ctx.lineTo(cursorPos.x, cursorPos.y + 8);
         ctx.stroke();
         
         // Center dot
         ctx.fillStyle = '#20d4d4';
         ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
+        ctx.arc(cursorPos.x, cursorPos.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
 
