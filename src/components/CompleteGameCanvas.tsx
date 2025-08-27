@@ -331,13 +331,12 @@ export const CompleteGameCanvas = () => {
   }, [handleKeyDown, handleKeyUp, handleMouseMove]);
 
   useEffect(() => {
-    // Only sync refs when actually changing rooms or starting the game, not when room state updates (like shard collection)
-    if (currentRoom.id !== currentRoomRef.current.id || (isPlaying && !currentRoomRef.current)) {
+    if (currentRoom.id !== currentRoomRef.current.id || isPlaying) {
       playerRef.current = { ...player };
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
-  }, [currentRoom.id, roomsCleared, isPlaying, player]);
+  }, [currentRoom.id, roomsCleared, isPlaying, player, currentRoom]);
 
     return (
     <div className="w-full h-full flex items-center justify-center relative">
