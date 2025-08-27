@@ -101,7 +101,19 @@ export const CompleteGameCanvas = () => {
       }
       lastTime = currentTime;
 
-      if (!isPlaying || isPaused || isGameOver) {
+      // Get fresh state from store on each frame
+      const gameState = useGameStore.getState();
+      const { isPlaying: currentlyPlaying, isPaused: currentlyPaused, isGameOver: currentlyGameOver } = gameState;
+
+      // Always render at least the background to avoid black screen
+      ctx.fillStyle = '#1a1f2e';
+      ctx.fillRect(0, 0, 800, 600);
+
+      // Ground
+      ctx.fillStyle = '#2a2f3e';
+      ctx.fillRect(0, 568, 800, 32);
+
+      if (!currentlyPlaying || currentlyPaused || currentlyGameOver) {
         animationRef.current = requestAnimationFrame(gameLoop);
         return;
       }
@@ -222,13 +234,7 @@ export const CompleteGameCanvas = () => {
         return;
       }
 
-      // ULTRA FAST RENDERING
-      ctx.fillStyle = '#1a1f2e';
-      ctx.fillRect(0, 0, 800, 600);
-
-      // Ground
-      ctx.fillStyle = '#2a2f3e';
-      ctx.fillRect(0, 568, 800, 32);
+      // ULTRA FAST RENDERING (background already drawn above)
 
       // Platforms
       ctx.fillStyle = '#2a2f3e';
@@ -325,12 +331,12 @@ export const CompleteGameCanvas = () => {
   }, [handleKeyDown, handleKeyUp, handleMouseMove]);
 
   useEffect(() => {
-    if (currentRoom.id !== currentRoomRef.current.id || !isPlaying) {
+    if (currentRoom.id !== currentRoomRef.current.id || isPlaying) {
       playerRef.current = { ...player };
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
-  }, [currentRoom.id, roomsCleared, isPlaying]);
+  }, [currentRoom.id, roomsCleared, isPlaying, player, currentRoom]);
 
     return (
     <div className="w-full h-full flex items-center justify-center relative">
