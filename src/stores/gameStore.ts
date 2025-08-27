@@ -52,8 +52,6 @@ interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
   isGameOver: boolean;
-  showRoomBriefing: boolean;
-  pendingRoomNumber: number | null;
   
   // Weekly challenge
   weeklySeed: number;
@@ -76,8 +74,6 @@ interface GameStore extends GameState {
   restartGame: () => void;
   respawnInRoom: () => void;
   nextRoom: () => void;
-  showRoomBriefingDialog: (roomNumber: number) => void;
-  startPendingRoom: () => void;
   syncPowerUpsFromUserData: () => void;
 }
 
@@ -125,8 +121,6 @@ export const useGameStore = create<GameStore>()(
       isPlaying: false, // Start false, let initGame set to true
       isPaused: false,
       isGameOver: false,
-      showRoomBriefing: false,
-      pendingRoomNumber: null,
       
       weeklySeed: 20241,
       currentRank: null,
@@ -335,12 +329,17 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const nextRoomNumber = state.roomsCleared + 2;
         
-        // Show room briefing dialog instead of immediately advancing
+        // Simple room advancement - no blocking operations
+        const newRoom = createInitialRoom(nextRoomNumber);
+        const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
+        
         set({
-          showRoomBriefing: true,
-          pendingRoomNumber: nextRoomNumber,
-          isPlaying: false,
-          isPaused: true
+          player: newPlayer,
+          currentRoom: newRoom,
+          roomsCleared: state.roomsCleared + 1,
+          score: state.score + 500,
+          shardsCollectedInCurrentRoom: 0,
+          roomStartTime: Date.now(),
         });
         
         // Background tasks that don't block game
@@ -359,37 +358,6 @@ export const useGameStore = create<GameStore>()(
             // Fail silently
           }
         }, 10);
-      },
-
-      showRoomBriefingDialog: (roomNumber: number) => {
-        set({
-          showRoomBriefing: true,
-          pendingRoomNumber: roomNumber,
-          isPlaying: false,
-          isPaused: true
-        });
-      },
-
-      startPendingRoom: () => {
-        const state = get();
-        if (!state.pendingRoomNumber) return;
-        
-        // Simple room advancement - no blocking operations
-        const newRoom = createInitialRoom(state.pendingRoomNumber);
-        const newPlayer = createInitialPlayer(newRoom.spawn.x, newRoom.spawn.y);
-        
-        set({
-          player: newPlayer,
-          currentRoom: newRoom,
-          roomsCleared: state.roomsCleared + 1,
-          score: state.score + 500,
-          shardsCollectedInCurrentRoom: 0,
-          roomStartTime: Date.now(),
-          showRoomBriefing: false,
-          pendingRoomNumber: null,
-          isPlaying: true,
-          isPaused: false
-        });
       },
 
       syncPowerUpsFromUserData: () => {
