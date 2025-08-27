@@ -296,17 +296,36 @@ export const CompleteGameCanvas = () => {
         ctx.stroke();
       }
 
-      // Cursor - simplified
+      // Cursor - prominent and always visible during gameplay
       if (isPlaying && !isPaused && !isGameOver) {
-        ctx.strokeStyle = '#20d4d4';
-        ctx.lineWidth = 1;
+        // Outer attention radius
+        ctx.strokeStyle = 'rgba(32, 212, 212, 0.4)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(cursor.x, cursor.y, 80, 0, Math.PI * 2);
         ctx.stroke();
         
+        // Inner attention radius
+        ctx.strokeStyle = 'rgba(32, 212, 212, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 40, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Center crosshair
+        ctx.strokeStyle = '#20d4d4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cursor.x - 8, cursor.y);
+        ctx.lineTo(cursor.x + 8, cursor.y);
+        ctx.moveTo(cursor.x, cursor.y - 8);
+        ctx.lineTo(cursor.x, cursor.y + 8);
+        ctx.stroke();
+        
+        // Center dot
         ctx.fillStyle = '#20d4d4';
         ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 2, 0, Math.PI * 2);
+        ctx.arc(cursor.x, cursor.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
 
