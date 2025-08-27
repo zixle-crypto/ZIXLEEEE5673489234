@@ -785,6 +785,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      generate_unique_username: {
+        Args: { base_email: string }
+        Returns: string
+      }
       get_leaderboard_with_context: {
         Args: { p_user_id?: string }
         Returns: {
