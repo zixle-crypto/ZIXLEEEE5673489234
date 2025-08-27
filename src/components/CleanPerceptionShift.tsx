@@ -21,12 +21,26 @@ import { toast } from '@/hooks/use-toast';
 import { Trophy, Crown, Target, ArrowLeft } from 'lucide-react';
 import { CrateShop } from './CrateShop';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
+import { RoomBriefingDialog } from './RoomBriefingDialog';
 
 
 type GameScreen = 'splash' | 'menu' | 'game' | 'leaderboard' | 'shop' | 'inventory' | 'crateShop' | 'engagementHub';
 
 export const CleanPerceptionShift = () => {
-  const { initGame, isPlaying, isPaused, isGameOver, currentRank, lastRoomReward, syncPowerUpsFromUserData, totalShards: gameStoreShards } = useGameStore();
+  const { 
+    initGame, 
+    isPlaying, 
+    isPaused, 
+    isGameOver, 
+    currentRank, 
+    lastRoomReward, 
+    syncPowerUpsFromUserData, 
+    totalShards: gameStoreShards,
+    showRoomBriefing,
+    pendingRoomNumber,
+    currentRoom,
+    startPendingRoom
+  } = useGameStore();
   const { user: authUser, gameData, setUser: setUserData, updateShards, addCubeToInventory, loadUserData } = useUserDataStore();
   
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('splash');
@@ -342,9 +356,32 @@ export const CleanPerceptionShift = () => {
     );
   }
 
+  // Helper function to get room type from room number
+  const getRoomType = (roomNumber: number) => {
+    const roomTypes = ['spikes', 'bridge', 'mixed', 'vertical', 'maze', 'timing', 'reverse', 'multi-bridge', 'platform-dance', 'gauntlet'];
+    const roomInLevel = (roomNumber - 1) % 10;
+    return roomTypes[roomInLevel];
+  };
+
+  const getDifficulty = (roomNumber: number) => {
+    return Math.floor((roomNumber - 1) / 50);
+  };
+
   // Game screen
   return (
     <div className="min-h-screen bg-game-bg flex flex-col items-center justify-center p-4 font-mono">
+      {/* Room Briefing Dialog */}
+      {showRoomBriefing && pendingRoomNumber && (
+        <RoomBriefingDialog
+          isOpen={showRoomBriefing}
+          onClose={() => setCurrentScreen('menu')}
+          onStart={startPendingRoom}
+          roomNumber={pendingRoomNumber}
+          roomType={getRoomType(pendingRoomNumber)}
+          difficulty={getDifficulty(pendingRoomNumber)}
+        />
+      )}
+
       {/* Header with Game Title and Stats */}
       <div className="text-center mb-6 w-full max-w-4xl">
         <div className="flex items-center justify-between mb-4">
