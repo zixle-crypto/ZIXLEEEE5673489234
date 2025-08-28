@@ -99,9 +99,6 @@ export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficu
     setShowCountdown(true);
   };
 
-  const handleSkip = () => {
-    onClose();
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -145,22 +142,14 @@ export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficu
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-4">
+              {/* Action Button */}
+              <div className="flex justify-center pt-4">
                 <Button 
                   onClick={handleStart} 
-                  className="flex-1 h-12 text-lg font-semibold"
+                  className="px-12 h-12 text-lg font-semibold"
                   size="lg"
                 >
                   Start Stage
-                </Button>
-                <Button 
-                  onClick={handleSkip} 
-                  variant="outline" 
-                  className="px-8 h-12"
-                  size="lg"
-                >
-                  Skip
                 </Button>
               </div>
             </>
