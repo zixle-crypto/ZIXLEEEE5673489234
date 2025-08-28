@@ -80,24 +80,25 @@ const getRoomTypeInfo = (roomType: string) => {
 
 export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficultyLevel }: StageIntroModalProps) => {
   const [countdown, setCountdown] = useState(3);
-  const [showCountdown, setShowCountdown] = useState(false);
 
   const roomInfo = getRoomTypeInfo(roomType);
 
   useEffect(() => {
-    if (showCountdown && countdown > 0) {
+    if (isOpen && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (showCountdown && countdown === 0) {
+    } else if (isOpen && countdown === 0) {
       onClose();
     }
-  }, [countdown, showCountdown, onClose]);
+  }, [countdown, isOpen, onClose]);
 
-  const handleStart = () => {
-    setShowCountdown(true);
-  };
+  useEffect(() => {
+    if (isOpen) {
+      setCountdown(3);
+    }
+  }, [isOpen]);
 
 
   return (
@@ -105,66 +106,60 @@ export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficu
       <DialogContent className="max-w-2xl p-8 bg-gradient-to-b from-background to-background/95 border-2 border-primary/20">
         <div className={`absolute inset-0 ${roomInfo.color} rounded-lg`} />
         <div className="relative z-10 space-y-6">
-          {!showCountdown ? (
-            <>
-              {/* Header */}
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-3">
-                  <Badge variant="outline" className="text-lg px-4 py-1">
-                    Stage {roomNumber}
-                  </Badge>
-                  <Badge variant="secondary" className="text-sm px-3 py-1">
-                    Difficulty {difficultyLevel + 1}
-                  </Badge>
-                </div>
-                <h2 className="text-4xl font-bold text-foreground">{roomInfo.title}</h2>
-              </div>
-
-              {/* Description */}
-              <div className="bg-card/50 backdrop-blur-sm rounded-lg p-6 border border-border/50">
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  {roomInfo.description}
-                </p>
-              </div>
-
-              {/* Tips */}
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold text-foreground">Strategy Tips:</h3>
-                <div className="grid gap-2">
-                  {roomInfo.tips.map((tip, index) => (
-                    <div key={index} className="flex items-start gap-3 bg-card/30 backdrop-blur-sm rounded-lg p-3 border border-border/30">
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-sm font-bold text-primary">{index + 1}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{tip}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="flex justify-center pt-4">
-                <Button 
-                  onClick={handleStart} 
-                  className="px-12 h-12 text-lg font-semibold"
-                  size="lg"
-                >
-                  Start Stage
-                </Button>
-              </div>
-            </>
-          ) : (
-            /* Countdown */
-            <div className="text-center space-y-6 py-12">
-              <h2 className="text-3xl font-bold text-foreground">Get Ready!</h2>
-              <div className="text-8xl font-bold text-primary animate-pulse">
-                {countdown}
-              </div>
-              <p className="text-lg text-muted-foreground">
-                Starting {roomInfo.title} in {countdown} second{countdown !== 1 ? 's' : ''}...
-              </p>
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <Badge variant="outline" className="text-lg px-4 py-1">
+                Stage {roomNumber}
+              </Badge>
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                Difficulty {difficultyLevel + 1}
+              </Badge>
             </div>
-          )}
+            <h2 className="text-4xl font-bold text-foreground">{roomInfo.title}</h2>
+          </div>
+
+          {/* Countdown and Instructions */}
+          <div className="text-center space-y-6">
+            <div className="text-8xl font-bold text-primary animate-pulse">
+              {countdown}
+            </div>
+            
+            {/* Game Instructions */}
+            <div className="space-y-4 max-w-xl mx-auto">
+              <h3 className="text-xl font-semibold text-foreground">How to Play:</h3>
+              <div className="grid gap-3 text-left">
+                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">1</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move your character</p>
+                </div>
+                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">2</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Look at objects with your <strong>mouse cursor</strong> to change their state</p>
+                </div>
+                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">3</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Reach the <strong>goal platform</strong> to complete the stage</p>
+                </div>
+                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">4</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Press <strong>ESC</strong> to pause or return to menu</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-lg text-muted-foreground">
+              Starting in {countdown} second{countdown !== 1 ? 's' : ''}...
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
