@@ -123,6 +123,38 @@ export const CompleteGameCanvas = () => {
       ctx.fillStyle = '#2a2f3e';
       ctx.fillRect(0, 568, 800, 32);
 
+      // Always render cursor even when not playing for visibility
+      const cursorPos = cursorRef.current;
+      // Outer attention radius
+      ctx.strokeStyle = 'rgba(32, 212, 212, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cursorPos.x, cursorPos.y, 80, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner attention radius
+      ctx.strokeStyle = 'rgba(32, 212, 212, 0.8)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cursorPos.x, cursorPos.y, 40, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Center crosshair
+      ctx.strokeStyle = '#20d4d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cursorPos.x - 8, cursorPos.y);
+      ctx.lineTo(cursorPos.x + 8, cursorPos.y);
+      ctx.moveTo(cursorPos.x, cursorPos.y - 8);
+      ctx.lineTo(cursorPos.x, cursorPos.y + 8);
+      ctx.stroke();
+      
+      // Center dot
+      ctx.fillStyle = '#20d4d4';
+      ctx.beginPath();
+      ctx.arc(cursorPos.x, cursorPos.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+
       if (!currentlyPlaying || currentlyPaused || currentlyGameOver) {
         animationRef.current = requestAnimationFrame(gameLoop);
         return;
@@ -132,14 +164,14 @@ export const CompleteGameCanvas = () => {
       const keys = keysRef.current;
       const room = currentRoomRef.current;
       // Use local cursor ref which gets updated by mouse movement
-      const cursorPos = cursorRef.current;
+      const gameCursorPos = cursorRef.current;
 
       // Update tiles every 4th frame only
       if (Math.floor(currentTime / frameInterval) % 4 === 0) {
         for (let i = 0; i < room.tiles.length; i++) {
           const tile = room.tiles[i];
-          const dx = cursorPos.x - (tile.x + 32);
-          const dy = cursorPos.y - (tile.y + 16);
+          const dx = gameCursorPos.x - (tile.x + 32);
+          const dy = gameCursorPos.y - (tile.y + 16);
           tile.isAttended = (dx * dx + dy * dy) < 6400;
         }
       }
@@ -307,38 +339,6 @@ export const CompleteGameCanvas = () => {
         ctx.stroke();
       }
 
-      // Cursor - prominent and always visible during gameplay
-      if (isPlaying && !isPaused && !isGameOver) {
-        // Outer attention radius
-        ctx.strokeStyle = 'rgba(32, 212, 212, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(cursorPos.x, cursorPos.y, 80, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Inner attention radius
-        ctx.strokeStyle = 'rgba(32, 212, 212, 0.8)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(cursorPos.x, cursorPos.y, 40, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Center crosshair
-        ctx.strokeStyle = '#20d4d4';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cursorPos.x - 8, cursorPos.y);
-        ctx.lineTo(cursorPos.x + 8, cursorPos.y);
-        ctx.moveTo(cursorPos.x, cursorPos.y - 8);
-        ctx.lineTo(cursorPos.x, cursorPos.y + 8);
-        ctx.stroke();
-        
-        // Center dot
-        ctx.fillStyle = '#20d4d4';
-        ctx.beginPath();
-        ctx.arc(cursorPos.x, cursorPos.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
 
       // UI - minimal text
       ctx.fillStyle = '#ffffff';
