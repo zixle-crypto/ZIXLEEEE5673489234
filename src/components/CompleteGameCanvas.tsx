@@ -5,6 +5,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { createRoom, Room, Tile } from '@/lib/roomSystem';
+import { StageIntroModal } from './StageIntroModal';
 
 export const CompleteGameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,10 +27,13 @@ export const CompleteGameCanvas = () => {
     isPlaying,
     isPaused,
     isGameOver,
+    showStageIntro,
     collectShard,
     playerDie,
     updateCursor,
-    nextRoom
+    nextRoom,
+    hideStageIntro,
+    getRoomType
   } = useGameStore();
 
   // Calculate if tile should be attended based on cursor proximity
@@ -368,7 +372,10 @@ export const CompleteGameCanvas = () => {
     }
   }, [currentRoom.id, roomsCleared, isPlaying, player, currentRoom]);
 
-    return (
+  // Calculate difficulty level for intro modal
+  const difficultyLevel = Math.floor((currentRoom.id - 1) / 50);
+
+  return (
     <div className="w-full h-full flex items-center justify-center relative">
       <canvas
         ref={canvasRef}
@@ -379,6 +386,14 @@ export const CompleteGameCanvas = () => {
           display: 'block',
           backgroundColor: '#1a1f2e'
         }}
+      />
+      
+      <StageIntroModal
+        isOpen={showStageIntro}
+        onClose={hideStageIntro}
+        roomNumber={currentRoom.id}
+        roomType={getRoomType()}
+        difficultyLevel={difficultyLevel}
       />
     </div>
   );

@@ -52,6 +52,7 @@ interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
   isGameOver: boolean;
+  showStageIntro: boolean;
   
   // Weekly challenge
   weeklySeed: number;
@@ -75,6 +76,8 @@ interface GameStore extends GameState {
   respawnInRoom: () => void;
   nextRoom: () => void;
   syncPowerUpsFromUserData: () => void;
+  hideStageIntro: () => void;
+  getRoomType: () => string;
 }
 
 const GAME_CONFIG = {
@@ -121,6 +124,7 @@ export const useGameStore = create<GameStore>()(
       isPlaying: false, // Start false, let initGame set to true
       isPaused: false,
       isGameOver: false,
+      showStageIntro: false,
       
       weeklySeed: 20241,
       currentRank: null,
@@ -153,9 +157,10 @@ export const useGameStore = create<GameStore>()(
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
-          isPlaying: true,
+          isPlaying: false, // Don't start playing immediately, show intro first
           isPaused: false,
           isGameOver: false,
+          showStageIntro: true, // Show stage intro on game init
           weeklySeed: 20241,
           currentRank: null,
           lastRoomReward: 0,
@@ -294,9 +299,10 @@ export const useGameStore = create<GameStore>()(
           shardsCollectedInCurrentRoom: 0,
           startTime: Date.now(),
           roomStartTime: Date.now(),
-          isPlaying: true,
+          isPlaying: false, // Don't start playing immediately, show intro first
           isPaused: false,
           isGameOver: false,
+          showStageIntro: true, // Show stage intro on restart
           weeklySeed: 20241,
           currentRank: null,
           lastRoomReward: 0,
@@ -340,6 +346,8 @@ export const useGameStore = create<GameStore>()(
           score: state.score + 500,
           shardsCollectedInCurrentRoom: 0,
           roomStartTime: Date.now(),
+          isPlaying: false, // Pause game for stage intro
+          showStageIntro: true, // Show intro for next room
         });
         
         // Background tasks that don't block game
@@ -378,6 +386,20 @@ export const useGameStore = create<GameStore>()(
         }).catch(error => {
           console.error('❌ Failed to sync power-ups:', error);
         });
+      },
+
+      hideStageIntro: () => {
+        set({ 
+          showStageIntro: false,
+          isPlaying: true 
+        });
+      },
+
+      getRoomType: () => {
+        const state = get();
+        const roomTypes = ['spikes', 'bridge', 'mixed', 'vertical', 'maze', 'timing', 'reverse', 'multi-bridge', 'platform-dance', 'gauntlet'];
+        const roomInLevel = (state.currentRoom.id - 1) % 10;
+        return roomTypes[roomInLevel] || 'mixed';
       },
     }),
     {
