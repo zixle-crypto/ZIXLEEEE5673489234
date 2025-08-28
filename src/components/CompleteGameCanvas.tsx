@@ -85,8 +85,13 @@ export const CompleteGameCanvas = () => {
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
-    // Initialize cursor from store only if not already set (e.g., on first load)
-    if (cursorRef.current.x === 400 && cursorRef.current.y === 300) {
+    // Initialize cursor from store, or set default if store cursor is at origin
+    if (cursor.x === 0 && cursor.y === 0) {
+      // If store cursor is uninitialized, set a default center position
+      cursorRef.current = { x: 400, y: 300 };
+      updateCursor(400, 300);
+    } else {
+      // Use cursor from store
       cursorRef.current = { x: cursor.x, y: cursor.y };
     }
 
