@@ -85,8 +85,10 @@ export const CompleteGameCanvas = () => {
       currentRoomRef.current = { ...currentRoom };
       roomNumberRef.current = roomsCleared + 1;
     }
-    // Always sync cursor from store to ensure consistency
-    cursorRef.current = { x: cursor.x, y: cursor.y };
+    // Initialize cursor from store only if not already set (e.g., on first load)
+    if (cursorRef.current.x === 400 && cursorRef.current.y === 300) {
+      cursorRef.current = { x: cursor.x, y: cursor.y };
+    }
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -124,9 +126,8 @@ export const CompleteGameCanvas = () => {
       const player = playerRef.current;
       const keys = keysRef.current;
       const room = currentRoomRef.current;
-      // Always use cursor from store to ensure consistency
-      const cursorPos = { x: cursor.x, y: cursor.y };
-      cursorRef.current = cursorPos;
+      // Use local cursor ref which gets updated by mouse movement
+      const cursorPos = cursorRef.current;
 
       // Update tiles every 4th frame only
       if (Math.floor(currentTime / frameInterval) % 4 === 0) {
