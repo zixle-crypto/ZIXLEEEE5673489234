@@ -11,77 +11,140 @@ interface StageIntroModalProps {
   difficultyLevel: number;
 }
 
-const getRoomTypeInfo = (roomType: string) => {
-  const roomTypeData: Record<string, { title: string; description: string; tips: string[]; color: string }> = {
+const getRoomTypeInfo = (roomType: string, roomNumber: number, difficultyLevel: number) => {
+  const roomInLevel = (roomNumber - 1) % 10; // 0-9 position within difficulty cycle
+  
+  const baseRoomData: Record<string, { title: string; description: string; tips: string[]; color: string; icon: string }> = {
     'spikes': {
-      title: 'Spike Chamber',
-      description: 'Navigate through deadly spikes using your perception. Watch carefully - some spikes become safe when you look at them, others become dangerous.',
-      tips: ['Look at red spikes to potentially deactivate them', 'Some spikes use reverse logic - be careful!', 'Use short, precise movements'],
-      color: 'bg-gradient-to-br from-red-500/20 to-orange-500/20'
+      title: `Spike Chamber ${roomNumber}`,
+      description: `Navigate through ${3 + Math.floor(difficultyLevel / 1.5)} deadly spikes. ${difficultyLevel > 3 ? 'WARNING: Some spikes use reverse logic!' : 'Focus your attention to deactivate red spikes.'}`,
+      tips: [
+        difficultyLevel === 0 ? 'Look at red spikes to deactivate them' : 'Most spikes are safe when you look at them',
+        difficultyLevel > 3 ? 'BEWARE: Some spikes are dangerous when looked at!' : 'Trust your instincts with spike colors',
+        roomInLevel < 5 ? 'Take your time and plan each jump' : 'Quick reflexes needed for tighter spacing',
+        `Difficulty ${difficultyLevel + 1}: ${difficultyLevel < 3 ? 'Straightforward logic' : difficultyLevel < 7 ? 'Mixed logic patterns' : 'Expert reverse psychology'}`
+      ],
+      color: `bg-gradient-to-br from-red-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-orange-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '⚡'
     },
     'bridge': {
-      title: 'Phantom Bridge',
-      description: 'Cross invisible bridges that only appear solid when observed. Your attention determines the path forward.',
-      tips: ['Look at bridge segments to make them solid', 'Jump carefully between bridge sections', 'Some bridges may use reverse logic at higher levels'],
-      color: 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20'
+      title: `Phantom Bridge ${roomNumber}`,
+      description: `Cross ${6 + difficultyLevel} invisible bridge segments. ${difficultyLevel > 2 ? 'Beware of spike traps between bridges!' : 'Focus to make bridges solid.'}`,
+      tips: [
+        `Look at ${Math.ceil((6 + difficultyLevel) / 2)} bridge segments to make them solid`,
+        difficultyLevel > 2 ? 'Avoid the dangerous spikes between bridge sections' : 'Jump carefully between visible segments',
+        roomInLevel % 2 === 0 ? 'First bridge has standard logic' : 'Second bridge may use reverse logic',
+        `Bridges at height: ${480 - (difficultyLevel * 2)}px - plan your jumps accordingly`
+      ],
+      color: `bg-gradient-to-br from-blue-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-cyan-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '🌉'
     },
     'mixed': {
-      title: 'Mixed Reality',
-      description: 'A combination of spikes and platforms with complex attention mechanics. Adapt your strategy as you progress.',
-      tips: ['Analyze each obstacle carefully', 'Mix of safe platforms and dangerous spikes', 'Expect reverse logic on some elements'],
-      color: 'bg-gradient-to-br from-purple-500/20 to-pink-500/20'
+      title: `Mixed Reality ${roomNumber}`,
+      description: `Navigate ${2 + Math.floor(difficultyLevel / 2)} mixed obstacles. ${difficultyLevel > 5 ? 'Complex reverse logic patterns ahead!' : 'Combination of spikes and safe platforms.'}`,
+      tips: [
+        `${2 + Math.floor(difficultyLevel / 2)} obstacles to overcome`,
+        difficultyLevel > 5 ? 'Every other obstacle uses reverse logic' : 'Mix of safe platforms and danger spikes',
+        roomInLevel < 3 ? 'Lower difficulty - trust your instincts' : 'Higher complexity - analyze each obstacle',
+        `Platforms spaced ${120 - (difficultyLevel * 2)}px apart`
+      ],
+      color: `bg-gradient-to-br from-purple-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-pink-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '🔀'
     },
     'vertical': {
-      title: 'Ascending Tower',
-      description: 'Climb vertical platforms while managing attention-based obstacles. Precision jumping is key.',
-      tips: ['Plan your jumps carefully', 'Use attention to clear vertical obstacles', 'Take your time - rushing leads to falls'],
-      color: 'bg-gradient-to-br from-green-500/20 to-emerald-500/20'
+      title: `Ascending Tower ${roomNumber}`,
+      description: `Climb ${6} vertical platforms with precision. ${difficultyLevel > 1 ? `Extra challenge: ${2 + Math.floor(difficultyLevel / 2)} shards to collect` : 'Focus on steady climbing rhythm.'}`,
+      tips: [
+        'Alternate between left and right platforms',
+        `Climb to ${170 - (difficultyLevel * 5)}px elevation`,
+        `Collect ${2 + Math.floor(difficultyLevel / 2)} shards on your way up`,
+        roomInLevel % 2 === 0 ? 'Start on left platform path' : 'Start on right platform path'
+      ],
+      color: `bg-gradient-to-br from-green-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-emerald-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '⬆️'
     },
     'maze': {
-      title: 'Perception Maze',
-      description: 'Navigate through a complex maze where your perception reveals the safe path forward.',
-      tips: ['Study the layout before moving', 'Use attention to identify safe paths', 'Dead ends may hide secrets'],
-      color: 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20'
+      title: `Perception Maze ${roomNumber}`,
+      description: `Navigate through ${8} platforms in a complex maze. Use perception to identify the safe path through hidden obstacles.`,
+      tips: [
+        'Study the platform layout before moving',
+        '4 special tiles hidden throughout the maze',
+        'Safe platforms appear solid when ignored',
+        `Final exit at elevation ${80 + (difficultyLevel * 10)}px`
+      ],
+      color: `bg-gradient-to-br from-yellow-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-amber-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '🌀'
     },
     'timing': {
-      title: 'Temporal Chamber',
-      description: 'Timing-based challenges where perception and reflexes must work in harmony.',
-      tips: ['Watch for timing cues', 'Coordinate attention with movement', 'Patience is crucial'],
-      color: 'bg-gradient-to-br from-indigo-500/20 to-blue-500/20'
+      title: `Temporal Chamber ${roomNumber}`,
+      description: `Master timing-based challenges with ${3 + Math.floor(difficultyLevel / 1.5)} moving obstacles. Coordinate your attention with precise movement.`,
+      tips: [
+        'Watch for timing patterns in obstacle movement',
+        'Coordinate cursor attention with WASD movement',
+        `${3 + Math.floor(difficultyLevel / 1.5)} timed obstacles to navigate`,
+        roomInLevel < 5 ? 'Slower timing patterns' : 'Rapid timing sequences'
+      ],
+      color: `bg-gradient-to-br from-indigo-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-blue-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '⏱️'
     },
     'reverse': {
-      title: 'Reverse Logic',
-      description: 'Everything works backwards here. What seems safe is dangerous, and what seems dangerous might be safe.',
-      tips: ['ALL logic is reversed', 'Dangerous when you look = Safe when you look', 'Trust the opposite of your instincts'],
-      color: 'bg-gradient-to-br from-rose-500/20 to-red-500/20'
+      title: `Reverse Logic ${roomNumber}`,
+      description: `EVERYTHING IS BACKWARDS! ${2 + Math.floor(difficultyLevel / 2)} obstacles with complete reverse logic. What seems safe is deadly!`,
+      tips: [
+        '🚨 ALL LOGIC IS REVERSED 🚨',
+        'Red spikes become DEADLY when you look at them',
+        'Safe platforms become DANGEROUS when observed',
+        'Trust the OPPOSITE of your instincts completely'
+      ],
+      color: `bg-gradient-to-br from-rose-${Math.min(600, 500 + difficultyLevel * 20)}/30 to-red-${Math.min(600, 500 + difficultyLevel * 20)}/30`,
+      icon: '🔄'
     },
     'multi-bridge': {
-      title: 'Bridge Network',
-      description: 'Multiple interconnected bridges create a complex network. Master attention switching between paths.',
-      tips: ['Switch attention between multiple bridges', 'Plan your route in advance', 'Some bridges may have gaps'],
-      color: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20'
+      title: `Bridge Network ${roomNumber}`,
+      description: `Navigate ${2 + Math.floor(difficultyLevel / 2)} interconnected bridge systems. Master rapid attention switching between multiple paths.`,
+      tips: [
+        `Switch attention between ${2 + Math.floor(difficultyLevel / 2)} different bridge networks`,
+        'Plan your route through the bridge network',
+        difficultyLevel > 2 ? 'Beware of gaps and spike traps' : 'Focus on bridge solidity',
+        'Some bridges may use reverse logic at higher difficulties'
+      ],
+      color: `bg-gradient-to-br from-teal-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-cyan-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '🌐'
     },
     'platform-dance': {
-      title: 'Platform Dance',
-      description: 'A choreographed sequence of platform jumps requiring precise attention and movement timing.',
-      tips: ['Follow the rhythm of safe platforms', 'Coordinate jumps with attention', 'Smooth movements work best'],
-      color: 'bg-gradient-to-br from-violet-500/20 to-purple-500/20'
+      title: `Platform Dance ${roomNumber}`,
+      description: `Perform a choreographed sequence across ${6} platforms. Master the rhythm of attention and movement in perfect harmony.`,
+      tips: [
+        'Follow the rhythm of safe platform sequences',
+        'Each platform requires different attention timing',
+        `Climb ${6} levels with precise coordination`,
+        roomInLevel % 2 === 0 ? 'Start with left-right-left pattern' : 'Begin with right-left-right sequence'
+      ],
+      color: `bg-gradient-to-br from-violet-${Math.min(600, 400 + difficultyLevel * 20)}/20 to-purple-${Math.min(600, 400 + difficultyLevel * 20)}/20`,
+      icon: '💃'
     },
     'gauntlet': {
-      title: 'Final Gauntlet',
-      description: 'The ultimate test combining all previous mechanics. Only true masters of perception will succeed.',
-      tips: ['Combines all previous mechanics', 'Extra challenges and rewards', 'Reverse logic mixed with normal logic'],
-      color: 'bg-gradient-to-br from-orange-500/20 to-red-500/20'
+      title: `Final Gauntlet ${roomNumber}`,
+      description: `THE ULTIMATE TEST! ${2 + Math.floor(difficultyLevel / 2)} obstacles PLUS their duplicates with reverse logic. Only true masters will succeed!`,
+      tips: [
+        `🏆 MASTER CHALLENGE: ${(2 + Math.floor(difficultyLevel / 2)) * 2} total obstacles`,
+        'First half: Standard logic patterns',
+        'Second half: REVERSE logic duplicates',
+        'Extra reward shard at coordinates (400, 200)',
+        `Difficulty ${difficultyLevel + 1}: ${difficultyLevel < 5 ? 'Advanced' : difficultyLevel < 10 ? 'Expert' : 'LEGENDARY'} level challenge`
+      ],
+      color: `bg-gradient-to-br from-orange-${Math.min(600, 500 + difficultyLevel * 15)}/25 to-red-${Math.min(600, 500 + difficultyLevel * 15)}/25`,
+      icon: '👑'
     }
   };
 
-  return roomTypeData[roomType] || roomTypeData['mixed'];
+  return baseRoomData[roomType] || baseRoomData['mixed'];
 };
 
 export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficultyLevel }: StageIntroModalProps) => {
   const [countdown, setCountdown] = useState(3);
 
-  const roomInfo = getRoomTypeInfo(roomType);
+  const roomInfo = getRoomTypeInfo(roomType, roomNumber, difficultyLevel);
 
   useEffect(() => {
     if (isOpen && countdown > 0) {
@@ -107,16 +170,18 @@ export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficu
         <div className={`absolute inset-0 ${roomInfo.color} rounded-lg`} />
         <div className="relative z-10 space-y-6">
           {/* Header */}
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <Badge variant="outline" className="text-lg px-4 py-1">
+              <Badge variant="outline" className="text-lg px-4 py-1 font-bold">
                 Stage {roomNumber}
               </Badge>
               <Badge variant="secondary" className="text-sm px-3 py-1">
                 Difficulty {difficultyLevel + 1}
               </Badge>
+              <div className="text-4xl">{roomInfo.icon}</div>
             </div>
             <h2 className="text-4xl font-bold text-foreground">{roomInfo.title}</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{roomInfo.description}</p>
           </div>
 
           {/* Countdown and Instructions */}
@@ -125,33 +190,31 @@ export const StageIntroModal = ({ isOpen, onClose, roomNumber, roomType, difficu
               {countdown}
             </div>
             
-            {/* Game Instructions */}
-            <div className="space-y-4 max-w-xl mx-auto">
-              <h3 className="text-xl font-semibold text-foreground">How to Play:</h3>
+            {/* Room-Specific Strategy Tips */}
+            <div className="space-y-4 max-w-2xl mx-auto">
+              <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <span>{roomInfo.icon}</span>
+                Stage {roomNumber} Strategy:
+              </h3>
               <div className="grid gap-3 text-left">
-                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-primary">1</span>
+                {roomInfo.tips.map((tip, index) => (
+                  <div key={index} className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-sm font-bold text-primary">{index + 1}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{tip}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move your character</p>
-                </div>
-                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-primary">2</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Look at objects with your <strong>mouse cursor</strong> to change their state</p>
-                </div>
-                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-primary">3</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Reach the <strong>goal platform</strong> to complete the stage</p>
-                </div>
-                <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border/30">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-primary">4</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Press <strong>ESC</strong> to pause or return to menu</p>
+                ))}
+              </div>
+              
+              {/* Quick Controls Reminder */}
+              <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
+                <h4 className="text-sm font-semibold text-accent mb-2">Quick Controls:</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <div><strong>WASD/Arrows:</strong> Move</div>
+                  <div><strong>Mouse:</strong> Attention</div>
+                  <div><strong>Goal:</strong> Reach exit</div>
+                  <div><strong>ESC:</strong> Pause</div>
                 </div>
               </div>
             </div>
